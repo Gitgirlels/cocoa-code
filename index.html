@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cocoa Code - Web Development Studio</title>
+    <link href="https://fonts.googleapis.com/css2?family=Special+Elite&family=Courier+Prime:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="floating-cocoa">🍫</div>
+    
+    <div class="hero">
+        <div class="container">
+            <h1 class="typewriter-header">Cocoa Code</h1>
+            <p style="font-size: 1.2rem; color: var(--dark-brown); margin-top: 1rem;">
+                Where great websites are crafted with sweetness
+            </p>
+        </div>
+    </div>
+
+    <div class="container">
+        <!-- Portfolio Section -->
+        <section class="paper-card">
+            <div class="coffee-stain"></div>
+            <h2 class="section-title">My Work</h2>
+            <p>Check out some of my recent web projects and see what I can create for you:</p>
+            
+            <div class="portfolio-grid">
+                <div class="portfolio-item1">
+                    <h3>Her Body Guide</h3>
+                    <p>Educational and informational website </p>
+                    <a href="https://herbodyguide.com" style="color: var(--dark-brown); text-decoration: underline;">Visit here</a>
+                </div>
+                
+                
+                <div class="portfolio-item2">
+                    <h3>Scrub Scout</h3>
+                    <p>Informational learning resource website</p>
+                    <a href="https://scrubscout.info" style="color: var(--dark-brown); text-decoration: underline;">Visit here</a>
+                </div>
+
+                <div class="portfolio-item">
+                    <h3>Baby Name Guru</h3>
+                    <p>App developer support website</p>
+                    
+                    <a href="https://babyname.guru" style="color: var(--dark-brown); text-decoration: underline;">Visit here</a>
+                </div>
+
+
+            </div>
+        </section>
+
+        <!-- Service Selection -->
+        <section class="paper-card">
+            <div class="coffee-stain"></div>
+            <h2 class="section-title">Choose Your Project</h2>
+            <p>Select the type of website you'd like me to build:</p>
+            
+            <div class="service-selector">
+                <div class="service-card" data-service="landing" data-price="1250">
+                    <div class="price-tag">$800 AUD</div>
+                    <h3>Landing Page</h3>
+                    <p>Single page website perfect for showcasing your business or product</p>
+                </div>
+                
+                <div class="service-card" data-service="business" data-price="2250">
+                    <div class="price-tag">$1,500 AUD</div>
+                    <h3>Business / E commerce Website</h3>
+                    <p>Multi-page professional website with contact forms and service pages</p>
+                </div>
+                
+                <div class="service-card" data-service="ecommerce" data-price="3750">
+                    <div class="price-tag">$2,000 AUD</div>
+                    <h3>Blog</h3>
+                    <p>Blog site to share ideas, experiences, information and opinions featuring classic blog features, SEO optimised, site ads implementable. </p>
+                </div>
+                
+                <div class="service-card" data-service="webapp" data-price="6000">
+                    <div class="price-tag">$3,000 AUD</div>
+                    <h3>Web Application</h3>
+                    <p>Custom web app with user authentication and database integration</p>
+                </div>
+                
+                <div class="service-card" data-service="custom" data-price="0">
+                    <div class="price-tag">$4,000 AUD</div>
+                    <h3>Custom Solution</h3>
+                    <p>Unique project tailored to your specific needs and requirements</p>
+                </div>
+            </div>
+            
+            <div style="background: var(--light-brown); padding: 1.5rem; border-radius: 10px; margin-top: 2rem; border: 2px solid var(--medium-brown);">
+                <h4 style="color: var(--dark-brown); margin-bottom: 1rem;">📅 Project Timeline & Process</h4>
+                <p style="margin-bottom: 0.5rem;"><strong>Estimated completion:</strong> 1-2 weeks from project start</p>
+                <p><strong>Stay informed:</strong> You'll receive email updates at each stage of development with progress pictures and preference checks to ensure your vision comes to life perfectly!</p>
+            </div>
+        </section>
+
+        <!-- Booking Form -->
+        <section class="paper-card">
+            <div class="coffee-stain"></div>
+            <h2 class="section-title">Project Details</h2>
+            
+            <form class="booking-form" id="bookingForm">
+                <div class="form-group">
+                    <label for="clientName">Your Name *</label>
+                    <input type="text" id="clientName" name="clientName" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="clientEmail">Email Address *</label>
+                    <input type="email" id="clientEmail" name="clientEmail" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="projectSpecs">Project Specifications *</label>
+                    <textarea id="projectSpecs" name="projectSpecs" placeholder="Describe your project in detail: features needed, design preferences, functionality requirements, target audience, etc." required></textarea>
+                </div>
+                
+                <div class="form-group">
+                    <label for="bookingMonth">Booking Month *</label>
+                    <select id="bookingMonth" name="bookingMonth" required>
+                        <option value="">Select a month</option>
+                        <option value="current">This Month (July 2025)</option>
+                        <option value="next">Next Month (August 2025)</option>
+                        <option value="future">Future Month (September 2025)</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label for="websiteType">Website Type</label>
+                    <select id="websiteType" name="websiteType">
+                        <option value="">Select a type</option>
+                        <option value="portfolio">Portfolio/Personal</option>
+                        <option value="business">Business/Corporate</option>
+                        <option value="blog">Blog/News</option>
+                        <option value="ecommerce">E-commerce</option>
+                        <option value="booking">Booking/Reservation</option>
+                        <option value="educational">Educational/Course</option>
+                        <option value="other">Other</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                <div class="form-group">
+                    <label>Website Color Scheme *</label>
+                    <p style="margin-bottom: 1rem; color: var(--dark-brown);">
+                        Choose 3 colors that represent your brand or style preference:
+                    </p>
+                    
+                    <div class="color-picker-container">
+                        <div class="color-input-group">
+                            <label for="primaryColor">Primary Color</label>
+                            <div class="color-preview" id="primaryPreview" onclick="document.getElementById('primaryColor').click()"></div>
+                            <input type="color" id="primaryColor" name="primaryColor" class="color-input" value="#8B4513">
+                        </div>
+                        
+                        <div class="color-input-group">
+                            <label for="secondaryColor">Secondary Color</label>
+                            <div class="color-preview" id="secondaryPreview" onclick="document.getElementById('secondaryColor').click()"></div>
+                            <input type="color" id="secondaryColor" name="secondaryColor" class="color-input" value="#D2B48C">
+                        </div>
+                        
+                        <div class="color-input-group">
+                            <label for="accentColor">Accent Color</label>
+                            <div class="color-preview" id="accentPreview" onclick="document.getElementById('accentColor').click()"></div>
+                            <input type="color" id="accentColor" name="accentColor" class="color-input" value="#CD853F">
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    
+                    <p style="margin-bottom: 1rem; color: var(--dark-brown);">
+                        ' Hey! checking in, i've made this much progress in your project. Any ammendments you'd like to be made? I've attached 4 logo samples...'
+                    </p>
+                    
+                        <div class="subscription-card" data-subscription="basic" data-price="0">
+                            <h4>Basic (Included)</h4>
+                            <p>4 sessions/month from project start</p>
+                            <strong>FREE</strong>
+                        </div>
+                        
+                        <div class="subscription-card" data-subscription="plus" data-price="100">
+                            <h4>Plus Support</h4>
+                            <p>4 sessions/month</p>
+                            <strong>$100 aud/month</strong>
+                        </div>
+                        
+                        <div class="subscription-card" data-subscription="premium" data-price="150">
+                            <h4>Premium Support</h4>
+                            <p>6 sessions /month</p>
+                            <strong>$150 aud/month</strong>
+                        </div>
+                        
+                        <div class="subscription-card" data-subscription="unlimited" data-price="250">
+                            <h4>Unlimited Support</h4>
+                            <p>Unlimited sessions</p>
+                            <strong>$250 aud/month</strong>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label>Singular Services</label>
+                    <p style="margin-bottom: 1rem; color: var(--dark-brown);">
+                       Already included in each website package: logo making, 4 support sessions from project start and SEO optimisation. html, css, js, unlimited bug fixes a month from project start.   If you'd like to buy extended services or singular services Choose from below (one-time fees):
+                    </p>
+                    
+                    <div class="extra-services">
+                        <div class="extra-service" data-extra="hosting" data-price="150">
+                            <h4>Live Hosting Setup</h4>
+                            <p>Domain & hosting configuration</p>
+                            <strong>$150, subject to domain availability</strong>
+                        </div>
+                        
+                        <div class="extra-service" data-extra="management" data-price="199">
+                            <h4>Website Management</h4>
+                            <p>Content updates & maintenance</p>
+                            <strong>$200/month </strong>
+                        </div>
+                        
+                        <div class="extra-service" data-extra="fixes" data-price="150">
+                            <h4>Code Fixes</h4>
+                            <p>Bug fixes & optimizations</p>
+                            <strong>$150/ session</strong>
+                        </div>
+                        
+                        <div class="extra-service" data-extra="seo" data-price="225">
+                            <h4>SEO Optimization</h4>
+                            <p>Search engine optimization</p>
+                            <strong>$225</strong>
+                        </div>
+                        
+                        <div class="extra-service" data-extra="analytics" data-price="125">
+                            <h4>Analytics Setup</h4>
+                            <p>Google Analytics & tracking</p>
+                            <strong>$125</strong>
+                        </div>
+                        
+                        <div class="extra-service" data-extra="security" data-price="175">
+                            <h4>Security Package</h4>
+                            <p>SSL, backups & security</p>
+                            <strong>$175</strong>
+                        </div>
+                    </div>
+                </div>
+            </form>
+        </section>
+
+        <!-- Total Calculator -->
+        <section class="total-calculator">
+            <h2 style="margin-bottom: 1rem;">Project Total</h2>
+            <div id="priceBreakdown"></div>
+            <div class="total-amount">$<span id="totalAmount">0</span> AUD</div>
+            <p style="margin-bottom: 2rem;">*Monthly services billed separately</p>
+            
+            <button class="btn btn-primary" onclick="proceedToPayment()">
+                Book Your Project Now
+            </button>
+        </section>
+    </div>
+
+    <!-- Payment Modal -->
+    <div id="paymentModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeModal()">&times;</span>
+            <h2 style="margin-bottom: 1rem;">Ready to Start?</h2>
+            <p>Your project total: $<span id="modalTotal">0</span> AUD</p>
+                    <label>Monthly Support Subscription</label>
+            
+            <p style="margin: 1rem 0;">Choose your preferred payment method:</p>
+            
+            <div class="payment-options">
+                <button class="btn btn-primary" onclick="processPayment('credit')">
+                    💳 Credit Card
+                </button>
+                <button class="btn" onclick="processPayment('paypal')">
+                    🅿️ PayPal
+                </button>
+                <button class="btn" onclick="processPayment('afterpay')" style="background: #B2FCE4; color: #000;">
+                    ⚡ Afterpay
+                </button>
+            </div>
+            
+            <p style="margin-top: 1rem; font-size: 0.9rem; color: var(--dark-brown);">
+                Secure payment processing • 30-day money-back guarantee
+            </p>
+        </div>
+    </div>
+
+    <footer class="site-footer">
+        <div class="wrapper">
+          <p>&copy; 2025 Cocoacode. All rights reserved.</p>
+        </div>
+      </footer>
+      
+<script src="script.js"></script>
+</body>
+</html>
