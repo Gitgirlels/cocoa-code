@@ -29,48 +29,82 @@ window.addEventListener('load', function() {
     updateColorPreview(document.getElementById('accentColor'), 'accentPreview');
 });
 
-// Booking availability tracking
+// Booking availability tracking - FALLBACK for offline mode
 let monthlyBookings = {
-    'July 2025': 2,
-  'August 2025': 1,
-  'September 2025': 0
+    'July 2025': 0,
+    'August 2025': 0,
+    'September 2025': 0
 };
 
 const maxBookingsPerMonth = 4;
-const API_BASE_URL = 'https://cocoa-code-backend-production.up.railway.app';
 
+// 🔥 CHANGE THIS TO YOUR ACTUAL BACKEND URL
+// For local development, use: http://localhost:5000/api
+// For production, use your actual deployed URL
+const API_BASE_URL = 'https://cocoa-code-backend-production.up.railway.app/api';  // ← Change this!
 
 async function checkAvailability(month) {
     try {
-      const response = await fetch(`${API_BASE_URL}/bookings/availability/${month}`);
-      const data = await response.json();
-      return data.available;
+        console.log(`🔍 Checking availability for: ${month}`);
+        
+        const response = await fetch(`${API_BASE_URL}/bookings/availability/${encodeURIComponent(month)}`, {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+        });
+        
+        if (!response.ok) {
+            console.error(`❌ API Error: ${response.status} ${response.statusText}`);
+            throw new Error(`HTTP ${response.status}`);
+        }
+        
+        const data = await response.json();
+        console.log(`✅ Availability response:`, data);
+        
+        return data.available;
     } catch (error) {
-      console.error('Error checking availability:', error);
-      return false;
+        console.error('❌ Error checking availability:', error);
+        
+        // FALLBACK: Use local tracking if API fails
+        console.log('📱 Using fallback availability check');
+        const currentCount = monthlyBookings[month] || 0;
+        return currentCount < maxBookingsPerMonth;
     }
-  }
-  
+}
 
 // Update booking month options based on availability
 async function updateBookingOptions() {
     const bookingSelect = document.getElementById('bookingMonth');
     const options = bookingSelect.querySelectorAll('option');
     
+    console.log('🔄 Updating booking options...');
+    
     for (const option of options) {
         if (option.value && option.value !== '') {
-            const available = await checkAvailability(option.value);
-            if (!available) {
-                option.textContent = option.textContent + ' (FULL)';
-                option.disabled = true;
-            } else {
-                option.textContent = option.textContent.replace(' (FULL)', '');
-                option.disabled = false;
+            console.log(`Checking option: ${option.value}`);
+            
+            try {
+                const available = await checkAvailability(option.value);
+                
+                if (!available) {
+                    option.textContent = option.textContent.replace(' (FULL)', '') + ' (FULL)';
+                    option.disabled = true;
+                    option.style.color = '#999';
+                } else {
+                    option.textContent = option.textContent.replace(' (FULL)', '');
+                    option.disabled = false;
+                    option.style.color = '';
+                }
+            } catch (error) {
+                console.error(`Error checking ${option.value}:`, error);
+                // Leave option enabled if we can't check
             }
         }
     }
+    
+    console.log('✅ Booking options updated');
 }
-
 
 // Service selection
 document.querySelectorAll('.service-card').forEach(card => {
@@ -162,10 +196,6 @@ async function proceedToPayment() {
     const hasSelectedExtras = selectedExtras.length > 0;
     const hasSelectedSubscription = selectedSubscription !== 'basic';
     
-    // Allow booking if any of the following are true:
-    // 1. A main service is selected
-    // 2. Extra services are selected
-    // 3. A paid subscription is selected
     if (!hasSelectedService && !hasSelectedExtras && !hasSelectedSubscription) {
         alert('Please select at least one service, extra service, or subscription plan!');
         return;
@@ -186,39 +216,11 @@ async function proceedToPayment() {
         }
         
         // Check availability one more time for main services
-        if (!(await checkAvailability(selectedMonth))) {
-            const monthNames = {
-                'current': 'July 2025',
-                'next': 'August 2025',
-                'future': 'September 2025'
-            };
-            
-            const projectId = await createBooking();
-            if (!projectId) return;
-            
-
-            // Find next available month
-            let nextAvailable = null;
-            for (const [month, count] of Object.entries(monthlyBookings)) {
-                if (count < maxBookingsPerMonth && month !== selectedMonth) {
-                    nextAvailable = month;
-                    break;
-                }
-            }
-            
-            if (nextAvailable) {
-                const nextMonthName = monthNames[nextAvailable];
-                const result = confirm(`Sorry! ${monthNames[selectedMonth]} is now full. Would you like to book for ${nextMonthName} instead?`);
-                
-                if (result) {
-                    document.getElementById('bookingMonth').value = nextAvailable;
-                    // Continue with payment
-                    document.getElementById('modalTotal').textContent = totalAmount;
-                    document.getElementById('paymentModal').style.display = 'block';
-                }
-            } else {
-                alert('Sorry! All available months are currently full. Please check back later or contact me directly.');
-            }
+        const available = await checkAvailability(selectedMonth);
+        console.log(`Final availability check for ${selectedMonth}: ${available}`);
+        
+        if (!available) {
+            alert(`Sorry! ${selectedMonth} is now full. Please select a different month.`);
             return;
         }
     }
@@ -231,60 +233,121 @@ function closeModal() {
     document.getElementById('paymentModal').style.display = 'none';
 }
 
-function processPayment(paymentMethod) {
-    // Only increment booking count if a main service was selected
-    if (selectedService) {
-        const selectedMonth = document.getElementById('bookingMonth').value;
-        monthlyBookings[selectedMonth]++;
-        updateBookingOptions();
-    }
+async function processPayment(paymentMethod) {
+    console.log('🔄 Processing payment...');
     
-    const monthNames = {
-        'current': 'July 2025',
-        'next': 'August 2025',
-        'future': 'September 2025'
+    try {
+        // Create booking in backend
+        const projectId = await createBooking();
+        if (!projectId) {
+            alert('❌ Failed to create booking. Please try again.');
+            return;
+        }
+        
+        console.log('✅ Booking created with ID:', projectId);
+        
+        // Only increment local booking count if a main service was selected (fallback)
+        if (selectedService) {
+            const selectedMonth = document.getElementById('bookingMonth').value;
+            monthlyBookings[selectedMonth] = (monthlyBookings[selectedMonth] || 0) + 1;
+            updateBookingOptions();
+        }
+        
+        const paymentMethods = {
+            'credit': 'Credit Card',
+            'paypal': 'PayPal',
+            'afterpay': 'Afterpay'
+        };
+        
+        let paymentMessage = '';
+        if (paymentMethod === 'afterpay') {
+            paymentMessage = `\n\n💡 With Afterpay: Pay in 4 interest-free installments!`;
+        }
+        
+        // Create success message
+        let successMessage = `🎉 Booking confirmed successfully via ${paymentMethods[paymentMethod]}! \n\nThank you for choosing Cocoa Code!`;
+        
+        if (selectedService) {
+            const selectedMonth = document.getElementById('bookingMonth').value;
+            successMessage += `\n\nYour project is scheduled for ${selectedMonth}.`;
+        }
+        
+        if (selectedExtras.length > 0) {
+            const extraTypes = selectedExtras.map(e => e.type).join(', ');
+            successMessage += `\n\nExtra services selected: ${extraTypes}`;
+        }
+        
+        if (selectedSubscription !== 'basic') {
+            successMessage += `\n\nSupport plan: ${selectedSubscription}`;
+        }
+        
+        successMessage += `${paymentMessage}\n\nYou will receive a confirmation email shortly with service details and next steps.`;
+        
+        if (selectedService) {
+            successMessage += `\n\nI'll be in touch within 24 hours to discuss your project requirements and we'll keep you updated at every stage with progress pictures!`;
+        } else {
+            successMessage += `\n\nI'll be in touch within 24 hours to coordinate your selected services!`;
+        }
+        
+        alert(successMessage);
+        closeModal();
+        
+        // Reset form
+        resetForm();
+        
+    } catch (error) {
+        console.error('❌ Payment processing error:', error);
+        alert('An error occurred during booking. Please try again or contact support.');
+    }
+}
+
+async function createBooking() {
+    const bookingData = {
+        clientName: document.getElementById('clientName').value,
+        clientEmail: document.getElementById('clientEmail').value,
+        projectSpecs: document.getElementById('projectSpecs').value,
+        websiteType: document.getElementById('websiteType').value,
+        bookingMonth: document.getElementById('bookingMonth').value,
+        projectType: selectedService?.type || 'service-only',
+        basePrice: selectedService?.price || 0,
+        totalPrice: totalAmount,
+        primaryColor: document.getElementById('primaryColor').value,
+        secondaryColor: document.getElementById('secondaryColor').value,
+        accentColor: document.getElementById('accentColor').value,
+        subscription: selectedSubscription,
+        extraServices: selectedExtras
     };
     
-    const paymentMethods = {
-        'credit': 'Credit Card',
-        'paypal': 'PayPal',
-        'afterpay': 'Afterpay'
-    };
+    console.log('📤 Sending booking data:', bookingData);
     
-    let paymentMessage = '';
-    if (paymentMethod === 'afterpay') {
-        paymentMessage = `\n\n💡 With Afterpay: Pay in 4 interest-free installments!`;
+    try {
+        const response = await fetch(`${API_BASE_URL}/bookings`, {
+            method: 'POST',
+            headers: { 
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(bookingData)
+        });
+        
+        const result = await response.json();
+        console.log('📥 Booking response:', result);
+        
+        if (response.ok) {
+            console.log('✅ Booking submitted successfully!');
+            return result.projectId;
+        } else {
+            console.error('❌ Booking failed:', result);
+            alert('❌ Booking failed: ' + (result.error || 'Unknown error'));
+            return null;
+        }
+    } catch (error) {
+        console.error('❌ Network error:', error);
+        alert('❌ Network error. Please check your connection and try again.');
+        return null;
     }
-    
-    // Create different success messages based on what was booked
-    let successMessage = `🎉 Payment processed successfully via ${paymentMethods[paymentMethod]}! \n\nThank you for choosing Cocoa Code!`;
-    
-    if (selectedService) {
-        const selectedMonth = document.getElementById('bookingMonth').value;
-        successMessage += `\n\nYour project is scheduled for ${monthNames[selectedMonth]}.`;
-    }
-    
-    if (selectedExtras.length > 0) {
-        const extraTypes = selectedExtras.map(e => e.type).join(', ');
-        successMessage += `\n\nExtra services selected: ${extraTypes}`;
-    }
-    
-    if (selectedSubscription !== 'basic') {
-        successMessage += `\n\nSupport plan: ${selectedSubscription}`;
-    }
-    
-    successMessage += `${paymentMessage}\n\nYou will receive a confirmation email shortly with service details and next steps.`;
-    
-    if (selectedService) {
-        successMessage += `\n\nI'll be in touch within 24 hours to discuss your project requirements and we'll keep you updated at every stage with progress pictures!`;
-    } else {
-        successMessage += `\n\nI'll be in touch within 24 hours to coordinate your selected services!`;
-    }
-    
-    alert(successMessage);
-    closeModal();
-    
-    // Reset form
+}
+
+function resetForm() {
     document.getElementById('bookingForm').reset();
     document.querySelectorAll('.service-card').forEach(c => c.classList.remove('selected'));
     document.querySelectorAll('.subscription-card').forEach(c => c.classList.remove('selected'));
@@ -305,48 +368,47 @@ function processPayment(paymentMethod) {
     updateTotal();
 }
 
-async function createBooking() {
-    const bookingData = {
-      clientName: document.getElementById('clientName').value,
-      clientEmail: document.getElementById('clientEmail').value,
-      projectSpecs: document.getElementById('projectSpecs').value,
-      websiteType: document.getElementById('websiteType').value,
-      bookingMonth: document.getElementById('bookingMonth').value,
-      projectType: selectedService?.type,
-      basePrice: selectedService?.price,
-      totalPrice: totalAmount,
-      primaryColor: document.getElementById('primaryColor').value,
-      secondaryColor: document.getElementById('secondaryColor').value,
-      accentColor: document.getElementById('accentColor').value,
-      subscription: selectedSubscription,
-      extraServices: selectedExtras
-    };
-  
+// Test API connection on page load
+async function testAPIConnection() {
     try {
-      const response = await fetch(`${API_BASE_URL}/bookings`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(bookingData)
-      });
-  
-      const result = await response.json();
-  
-      if (response.ok) {
-        alert('🎉 Booking submitted successfully!');
-        return result.projectId; // You’ll use this for payment (Step 8)
-      } else {
-        alert('❌ Booking failed: ' + result.error);
-      }
+        console.log('🔍 Testing API connection...');
+        const response = await fetch(`${API_BASE_URL}/bookings/availability/July 2025`);
+        
+        if (response.ok) {
+            console.log('✅ API connection successful!');
+            return true;
+        } else {
+            console.warn('⚠️ API responded but with error:', response.status);
+            return false;
+        }
     } catch (error) {
-      console.error('Booking error:', error);
-      alert('An unexpected error occurred');
+        console.error('❌ API connection failed:', error);
+        console.log('📱 Running in offline mode - using fallback booking system');
+        return false;
     }
-  }
-  
+}
 
-// Initialize with basic subscription selected and update booking options
-document.querySelector('[data-subscription="basic"]').classList.add('selected');
-updateBookingOptions();
+// Initialize everything when page loads
+document.addEventListener('DOMContentLoaded', async function() {
+    console.log('🚀 Initializing Cocoa Code booking system...');
+    
+    // Test API connection
+    const apiConnected = await testAPIConnection();
+    
+    if (apiConnected) {
+        console.log('🌐 Online mode: Using backend API');
+    } else {
+        console.log('📱 Offline mode: Using local fallback');
+    }
+    
+    // Initialize with basic subscription selected
+    document.querySelector('[data-subscription="basic"]').classList.add('selected');
+    
+    // Update booking options
+    await updateBookingOptions();
+    
+    console.log('✅ Initialization complete!');
+});
 
 // Close modal when clicking outside
 window.onclick = function(event) {
