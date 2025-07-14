@@ -37,7 +37,8 @@ let monthlyBookings = {
 };
 
 const maxBookingsPerMonth = 4;
-const API_BASE_URL = 'http://localhost:5000/api';
+const API_BASE_URL = 'https://cocoa-code-backend-production.up.railway.app';
+
 
 async function checkAvailability(month) {
     try {
