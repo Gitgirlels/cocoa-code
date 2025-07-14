@@ -38,20 +38,59 @@ let monthlyBookings = {
 
 const maxBookingsPerMonth = 4;
 
-// 🔥 CHANGE THIS TO YOUR ACTUAL BACKEND URL
-// For local development, use: http://localhost:5000/api
-// For production, use your actual deployed URL
-const API_BASE_URL = 'https://cocoa-code-backend-production.up.railway.app/api';  // ← Change this!
+// 🔥 MULTIPLE API ENDPOINTS - Try in order
+const API_ENDPOINTS = [
+    'https://cocoa-code-backend-production.up.railway.app/api',
+    'http://localhost:5000/api',
+    'http://127.0.0.1:5000/api'
+];
+
+let currentApiUrl = null;
+
+// Test API connections and find working endpoint
+async function findWorkingAPI() {
+    console.log('🔍 Testing API endpoints...');
+    
+    for (const url of API_ENDPOINTS) {
+        try {
+            console.log(`🧪 Testing: ${url}`);
+            const response = await fetch(`${url}/health`, {
+                method: 'GET',
+                headers: { 'Content-Type': 'application/json' },
+                signal: AbortSignal.timeout(5000) // 5 second timeout
+            });
+            
+            if (response.ok) {
+                const data = await response.json();
+                console.log(`✅ Found working API: ${url}`, data);
+                currentApiUrl = url;
+                return url;
+            } else {
+                console.log(`❌ API responded but with error: ${response.status}`);
+            }
+        } catch (error) {
+            console.log(`❌ Failed to connect to ${url}:`, error.message);
+        }
+    }
+    
+    console.log('📱 No API endpoints available - using offline mode');
+    return null;
+}
 
 async function checkAvailability(month) {
+    if (!currentApiUrl) {
+        console.log('📱 Using fallback availability check');
+        const currentCount = monthlyBookings[month] || 0;
+        return currentCount < maxBookingsPerMonth;
+    }
+
     try {
         console.log(`🔍 Checking availability for: ${month}`);
         
-        const response = await fetch(`${API_BASE_URL}/bookings/availability/${encodeURIComponent(month)}`, {
+        const response = await fetch(`${currentApiUrl}/bookings/availability/${encodeURIComponent(month)}`, {
             method: 'GET',
-            headers: {
-                'Content-Type': 'application/json',
-            },
+            headers: { 'Content-Type': 'application/json' },
+            signal: AbortSignal.timeout(10000) // 10 second timeout
         });
         
         if (!response.ok) {
@@ -237,17 +276,23 @@ async function processPayment(paymentMethod) {
     console.log('🔄 Processing payment...');
     
     try {
+        // Show loading state
+        const paymentButtons = document.querySelectorAll('.payment-options button');
+        paymentButtons.forEach(btn => {
+            btn.disabled = true;
+            btn.textContent = 'Processing...';
+        });
+        
         // Create booking in backend
         const projectId = await createBooking();
         if (!projectId) {
-            alert('❌ Failed to create booking. Please try again.');
-            return;
+            throw new Error('Failed to create booking');
         }
         
         console.log('✅ Booking created with ID:', projectId);
         
         // Only increment local booking count if a main service was selected (fallback)
-        if (selectedService) {
+        if (selectedService && !currentApiUrl) {
             const selectedMonth = document.getElementById('bookingMonth').value;
             monthlyBookings[selectedMonth] = (monthlyBookings[selectedMonth] || 0) + 1;
             updateBookingOptions();
@@ -297,7 +342,15 @@ async function processPayment(paymentMethod) {
         
     } catch (error) {
         console.error('❌ Payment processing error:', error);
-        alert('An error occurred during booking. Please try again or contact support.');
+        alert(`Payment failed: ${error.message}\n\nPlease try again or contact support if the problem persists.`);
+        
+        // Re-enable buttons
+        const paymentButtons = document.querySelectorAll('.payment-options button');
+        paymentButtons.forEach((btn, index) => {
+            btn.disabled = false;
+            const methods = ['Credit Card', 'PayPal', 'Afterpay'];
+            btn.innerHTML = `💳 ${methods[index] || 'Payment'}`;
+        });
     }
 }
 
@@ -320,13 +373,21 @@ async function createBooking() {
     
     console.log('📤 Sending booking data:', bookingData);
     
+    if (!currentApiUrl) {
+        console.log('📱 Offline mode - simulating booking creation');
+        // Simulate API response in offline mode
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        return 'offline-' + Date.now();
+    }
+    
     try {
-        const response = await fetch(`${API_BASE_URL}/bookings`, {
+        const response = await fetch(`${currentApiUrl}/bookings`, {
             method: 'POST',
             headers: { 
                 'Content-Type': 'application/json',
             },
-            body: JSON.stringify(bookingData)
+            body: JSON.stringify(bookingData),
+            signal: AbortSignal.timeout(15000) // 15 second timeout
         });
         
         const result = await response.json();
@@ -337,13 +398,14 @@ async function createBooking() {
             return result.projectId;
         } else {
             console.error('❌ Booking failed:', result);
-            alert('❌ Booking failed: ' + (result.error || 'Unknown error'));
-            return null;
+            throw new Error(result.error || 'Unknown error occurred');
         }
     } catch (error) {
         console.error('❌ Network error:', error);
-        alert('❌ Network error. Please check your connection and try again.');
-        return null;
+        if (error.name === 'AbortError') {
+            throw new Error('Request timed out. Please check your connection and try again.');
+        }
+        throw new Error(`Connection failed: ${error.message}`);
     }
 }
 
@@ -368,37 +430,30 @@ function resetForm() {
     updateTotal();
 }
 
-// Test API connection on page load
-async function testAPIConnection() {
-    try {
-        console.log('🔍 Testing API connection...');
-        const response = await fetch(`${API_BASE_URL}/bookings/availability/July 2025`);
-        
-        if (response.ok) {
-            console.log('✅ API connection successful!');
-            return true;
-        } else {
-            console.warn('⚠️ API responded but with error:', response.status);
-            return false;
-        }
-    } catch (error) {
-        console.error('❌ API connection failed:', error);
-        console.log('📱 Running in offline mode - using fallback booking system');
-        return false;
-    }
-}
-
 // Initialize everything when page loads
 document.addEventListener('DOMContentLoaded', async function() {
     console.log('🚀 Initializing Cocoa Code booking system...');
     
     // Test API connection
-    const apiConnected = await testAPIConnection();
+    const workingApi = await findWorkingAPI();
     
-    if (apiConnected) {
-        console.log('🌐 Online mode: Using backend API');
+    if (workingApi) {
+        console.log('🌐 Online mode: Using backend API at', workingApi);
     } else {
         console.log('📱 Offline mode: Using local fallback');
+        // Show user notification about offline mode
+        const notification = document.createElement('div');
+        notification.style.cssText = `
+            position: fixed; top: 10px; right: 10px; 
+            background: #f39c12; color: white; padding: 10px; 
+            border-radius: 5px; z-index: 9999;
+            max-width: 300px; font-size: 14px;
+        `;
+        notification.textContent = '⚠️ Running in offline mode. Some features may be limited.';
+        document.body.appendChild(notification);
+        
+        // Remove notification after 5 seconds
+        setTimeout(() => notification.remove(), 5000);
     }
     
     // Initialize with basic subscription selected
