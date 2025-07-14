@@ -31,9 +31,9 @@ window.addEventListener('load', function() {
 
 // Booking availability tracking
 let monthlyBookings = {
-    'current': 2,  // Current bookings for this month
-    'next': 1,     // Current bookings for next month
-    'future': 0    // Current bookings for future month
+    'July 2025': 2,
+  'August 2025': 1,
+  'September 2025': 0
 };
 
 const maxBookingsPerMonth = 4;
