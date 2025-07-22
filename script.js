@@ -567,4 +567,3 @@ window.addEventListener('click', function(event) {
 window.proceedToPayment = proceedToPayment;
 window.closeModal = closeModal;
 window.processPayment = processPayment;
-
