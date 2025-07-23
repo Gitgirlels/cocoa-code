@@ -172,34 +172,6 @@ function showNotification(message, type = 'info') {
 }
 
 
-// Initialize everything when page loads
-document.addEventListener('DOMContentLoaded', async function() {
-    console.log('🚀 Initializing Cocoa Code booking system...');
-    
-    // Test API connection
-    const workingApi = await findWorkingAPI();
-    
-    if (workingApi) {
-        console.log('🌐 Online mode: Connected to', workingApi);
-        showNotification('✅ Connected to booking system', 'success');
-    } else {
-        console.log('📱 Offline mode: Using local fallback');
-        showNotification('⚠️ Running in offline mode. Limited functionality available.', 'error');
-    }
-    
-    // Initialize event handlers
-    initializeSelectionHandlers();
-    
-    // Set basic subscription as default
-    const basicSubscription = document.querySelector('[data-subscription="basic"]');
-    if (basicSubscription) basicSubscription.classList.add('selected');
-    
-    // Update booking availability
-    await updateBookingOptions();
-    
-    console.log('✅ Initialization complete!');
-});
-
 // Modal click outside to close
 window.addEventListener('click', function(event) {
     const modal = document.getElementById('paymentModal');
