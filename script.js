@@ -65,7 +65,7 @@ document.addEventListener('DOMContentLoaded', async function() {
     updateTotal();
     
     // Test payment system after initialization
-    setTimeout(testPaymentSystem, 2000);
+    setTimeout(testPaymentSystem, 8000);
 });
 
 // Initialize API connection with retry logic
@@ -79,6 +79,7 @@ async function initializeApiConnection() {
         const isConnected = await checkApiStatus();
         if (isConnected) {
             console.log(`✅ Connected successfully to: ${currentApiUrl}`);
+            // Don't show success notification immediately, wait for payment test
             return true;
         }
         
@@ -88,7 +89,7 @@ async function initializeApiConnection() {
     }
     
     console.warn('⚠️ All API endpoints failed, using offline mode');
-    showNotification('⚠️ Running in offline mode. Some features may be limited.', 'warning');
+    showNotification('⚠️ Running in offline mode. Booking may be limited.', 'warning');
     return false;
 }
 
@@ -781,29 +782,57 @@ function resetForm() {
 // Test payment system
 async function testPaymentSystem() {
     try {
-        const response = await fetch(`${currentApiUrl}/payments/test-stripe`, {
-            method: 'GET',
-            headers: {
-                'Accept': 'application/json'
-            },
-            mode: 'cors',
-            credentials: 'omit'
-        });
-        
+      // Only test if we're in online mode
+      if (!isOnlineMode) {
+        console.log('⚠️ Skipping payment test - offline mode');
+        showNotification('⚠️ Payment system requires online connection', 'warning');
+        return;
+      }
+  
+      console.log('🧪 Testing payment system...');
+      
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
+      
+      const response = await fetch(`${currentApiUrl}/payments/test-stripe`, {
+        method: 'GET',
+        headers: {
+          'Accept': 'application/json'
+        },
+        signal: controller.signal,
+        mode: 'cors',
+        credentials: 'omit'
+      });
+      
+      clearTimeout(timeoutId);
+      
+      if (response.ok) {
         const data = await response.json();
-        
-        if (response.ok) {
-            console.log('✅ Payment system test passed:', data);
-            showNotification('💳 Payment system ready', 'success');
-        } else {
-            throw new Error(data.error || 'Payment system test failed');
-        }
-        
+        console.log('✅ Payment system test passed:', data);
+        showNotification('💳 Payment system ready', 'success');
+      } else {
+        const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
+        throw new Error(errorData.error || `HTTP ${response.status}`);
+      }
+      
     } catch (error) {
-        console.error('❌ Payment system test failed:', error);
+      console.error('❌ Payment system test failed:', error);
+      
+      // More helpful error messages
+      if (error.name === 'AbortError') {
+        showNotification('⏱️ Payment system test timeout - server may be starting', 'warning');
+      } else if (error.message.includes('STRIPE_SECRET_KEY')) {
+        showNotification('🔑 Payment system configuration issue', 'warning');
+      } else if (error.message.includes('404')) {
+        showNotification('⚠️ Payment test endpoint not found', 'warning');
+      } else if (error.message.includes('500')) {
+        showNotification('⚠️ Payment system configuration error', 'warning');
+      } else {
         showNotification('⚠️ Payment system may have issues', 'warning');
+      }
     }
-}
+  }
+  
 
 // Retry API connection with exponential backoff
 async function retryApiConnection() {
