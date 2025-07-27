@@ -832,8 +832,200 @@ async function testPaymentSystem() {
       }
     }
   }
-  
+  //
+const API_BASE = 'https://cocoa-code-backend-production.up.railway.app/api';
 
+        function showResult(elementId, message, type = 'info') {
+            const element = document.getElementById(elementId);
+            element.innerHTML = `<div class="test-result ${type}">${message}</div>`;
+        }
+
+        async function testHealth() {
+            showResult('healthResult', '🔄 Testing backend connection...', 'info');
+            
+            try {
+                const response = await fetch(`${API_BASE}/health`, {
+                    method: 'GET',
+                    headers: { 'Accept': 'application/json' },
+                    mode: 'cors'
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    showResult('healthResult', 
+                        `✅ Backend is ONLINE!<br>
+                        Status: ${data.status}<br>
+                        Environment: ${data.env}<br>
+                        Timestamp: ${data.timestamp}`, 
+                        'success'
+                    );
+                } else {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+            } catch (error) {
+                showResult('healthResult', 
+                    `❌ Backend connection failed!<br>
+                    Error: ${error.message}<br>
+                    <strong>Action needed:</strong> Check Railway deployment`, 
+                    'error'
+                );
+            }
+        }
+
+        async function testAvailability() {
+            showResult('availabilityResult', '🔄 Checking booking availability...', 'info');
+            
+            try {
+                const response = await fetch(`${API_BASE}/bookings/availability/July%202025`, {
+                    method: 'GET',
+                    headers: { 'Accept': 'application/json' },
+                    mode: 'cors'
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    showResult('availabilityResult', 
+                        `✅ Availability system working!<br>
+                        July 2025: ${data.available ? 'Available' : 'Full'}<br>
+                        Current bookings: ${data.currentBookings}/${data.maxBookings}`, 
+                        'success'
+                    );
+                } else {
+                    throw new Error(`HTTP ${response.status}`);
+                }
+            } catch (error) {
+                showResult('availabilityResult', 
+                    `❌ Availability check failed: ${error.message}`, 
+                    'error'
+                );
+            }
+        }
+
+        async function testStripe() {
+            showResult('stripeResult', '🔄 Testing Stripe integration...', 'info');
+            
+            try {
+                const response = await fetch(`${API_BASE}/payments/test-stripe`, {
+                    method: 'GET',
+                    headers: { 'Accept': 'application/json' },
+                    mode: 'cors'
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    showResult('stripeResult', 
+                        `✅ Stripe is configured!<br>
+                        ${data.message}<br>
+                        Environment: ${data.environment}<br>
+                        Webhook configured: ${data.hasWebhookSecret ? 'Yes' : 'No'}`, 
+                        'success'
+                    );
+                } else {
+                    const errorData = await response.json();
+                    throw new Error(errorData.error || `HTTP ${response.status}`);
+                }
+            } catch (error) {
+                showResult('stripeResult', 
+                    `❌ Stripe test failed: ${error.message}<br>
+                    <strong>Check:</strong> STRIPE_SECRET_KEY environment variable`, 
+                    'error'
+                );
+            }
+        }
+
+        async function testFullBooking() {
+            showResult('bookingResult', '🔄 Submitting test booking...', 'info');
+            
+            const bookingData = {
+                clientName: document.getElementById('testName').value,
+                clientEmail: document.getElementById('testEmail').value,
+                projectSpecs: document.getElementById('testSpecs').value,
+                bookingMonth: 'July 2025',
+                projectType: document.getElementById('testService').value,
+                basePrice: getServicePrice(document.getElementById('testService').value),
+                totalPrice: getServicePrice(document.getElementById('testService').value),
+                primaryColor: '#8B4513',
+                secondaryColor: '#D2B48C',
+                accentColor: '#CD853F'
+            };
+            
+            try {
+                const response = await fetch(`${API_BASE}/bookings`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json'
+                    },
+                    mode: 'cors',
+                    body: JSON.stringify(bookingData)
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    showResult('bookingResult', 
+                        `✅ Test booking successful!<br>
+                        Project ID: ${data.projectId}<br>
+                        Client ID: ${data.clientId}<br>
+                        <strong>Database is working!</strong>`, 
+                        'success'
+                    );
+                } else {
+                    const errorData = await response.json();
+                    throw new Error(errorData.error || `HTTP ${response.status}`);
+                }
+            } catch (error) {
+                showResult('bookingResult', 
+                    `❌ Booking failed: ${error.message}`, 
+                    'error'
+                );
+            }
+        }
+
+        async function getDebugInfo() {
+            showResult('debugResult', '🔄 Getting database information...', 'info');
+            
+            try {
+                const response = await fetch(`${API_BASE}/bookings/debug`, {
+                    method: 'GET',
+                    headers: { 'Accept': 'application/json' },
+                    mode: 'cors'
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    showResult('debugResult', 
+                        `✅ Database information:<br>
+                        Total projects: ${data.totalProjects}<br>
+                        Bookings by month: <pre>${JSON.stringify(data.bookingsByMonth, null, 2)}</pre>
+                        Recent projects: <pre>${JSON.stringify(data.allProjects.slice(0, 3), null, 2)}</pre>`, 
+                        'success'
+                    );
+                } else {
+                    throw new Error(`HTTP ${response.status}`);
+                }
+            } catch (error) {
+                showResult('debugResult', 
+                    `❌ Debug info failed: ${error.message}`, 
+                    'error'
+                );
+            }
+        }
+
+        function getServicePrice(serviceType) {
+            const prices = {
+                'landing': 800,
+                'business': 2500,
+                'ecommerce': 2000,
+                'webapp': 3000,
+                'custom': 4000
+            };
+            return prices[serviceType] || 0;
+        }
+
+        // Auto-run health check on page load
+        window.onload = function() {
+            setTimeout(testHealth, 1000);
+        };
 // Retry API connection with exponential backoff
 async function retryApiConnection() {
     if (apiRetryCount >= MAX_RETRIES) {
