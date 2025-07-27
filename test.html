@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -63,11 +62,28 @@
             box-sizing: border-box;
         }
         textarea { height: 80px; }
+        .status-indicator {
+            display: inline-block;
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            margin-right: 8px;
+        }
+        .status-online { background: #28a745; }
+        .status-offline { background: #dc3545; }
+        .status-warning { background: #ffc107; }
     </style>
 </head>
 <body>
     <h1>🍫 Cocoa Code Backend Tester</h1>
     <p>Use this tool to test your backend before going live with customers.</p>
+    
+    <div style="background: #fff3cd; border: 1px solid #ffeaa7; border-radius: 8px; padding: 1rem; margin: 1rem 0;">
+        <h4 style="color: #856404; margin-bottom: 0.5rem;">🧪 System Status</h4>
+        <p id="systemStatus" style="color: #856404; margin: 0;">
+            <span class="status-indicator status-warning"></span>Checking system status...
+        </p>
+    </div>
 
     <!-- Health Check -->
     <div class="test-section">
@@ -123,3 +139,329 @@
         <button onclick="getDebugInfo()">Get Database Stats</button>
         <div id="debugResult"></div>
     </div>
+
+    <!-- Quick Actions -->
+    <div class="test-section">
+        <h2>6. Quick Actions</h2>
+        <button onclick="runAllTests()">🚀 Run All Tests</button>
+        <button onclick="clearResults()">🧹 Clear Results</button>
+        <button onclick="exportResults()">📄 Export Results</button>
+        <div id="quickActionsResult"></div>
+    </div>
+
+    <script>
+        const API_BASE = 'https://cocoa-code-backend-production.up.railway.app/api';
+        let testResults = {};
+
+        function showResult(elementId, message, type = 'info') {
+            const element = document.getElementById(elementId);
+            if (element) {
+                element.innerHTML = `<div class="test-result ${type}">${message}</div>`;
+                testResults[elementId] = { message, type, timestamp: new Date().toISOString() };
+            }
+        }
+
+        function updateSystemStatus(status, message) {
+            const statusElement = document.getElementById('systemStatus');
+            const indicators = {
+                online: '<span class="status-indicator status-online"></span>System Online - Ready for customers!',
+                warning: '<span class="status-indicator status-warning"></span>System has issues - Check failed tests',
+                offline: '<span class="status-indicator status-offline"></span>System Offline - Fix required before going live'
+            };
+            statusElement.innerHTML = indicators[status] || message;
+        }
+
+        async function testHealth() {
+            showResult('healthResult', '🔄 Testing backend connection...', 'info');
+            
+            try {
+                const response = await fetch(`${API_BASE}/health`, {
+                    method: 'GET',
+                    headers: { 'Accept': 'application/json' },
+                    mode: 'cors'
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    showResult('healthResult', 
+                        `✅ Backend is ONLINE!<br>
+                        Status: ${data.status}<br>
+                        Environment: ${data.env}<br>
+                        Timestamp: ${data.timestamp}<br>
+                        <strong>✓ Ready to accept customers!</strong>`, 
+                        'success'
+                    );
+                    return true;
+                } else {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+            } catch (error) {
+                showResult('healthResult', 
+                    `❌ Backend connection failed!<br>
+                    Error: ${error.message}<br>
+                    <strong>Action needed:</strong> Check Railway deployment<br>
+                    <strong>❌ NOT ready for customers!</strong>`, 
+                    'error'
+                );
+                return false;
+            }
+        }
+
+        async function testAvailability() {
+            showResult('availabilityResult', '🔄 Checking booking availability...', 'info');
+            
+            try {
+                const response = await fetch(`${API_BASE}/bookings/availability/July%202025`, {
+                    method: 'GET',
+                    headers: { 'Accept': 'application/json' },
+                    mode: 'cors'
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    showResult('availabilityResult', 
+                        `✅ Availability system working!<br>
+                        July 2025: ${data.available ? 'Available' : 'Full'}<br>
+                        Current bookings: ${data.currentBookings}/${data.maxBookings}<br>
+                        <strong>✓ Booking calendar functional!</strong>`, 
+                        'success'
+                    );
+                    return true;
+                } else {
+                    throw new Error(`HTTP ${response.status}`);
+                }
+            } catch (error) {
+                showResult('availabilityResult', 
+                    `❌ Availability check failed: ${error.message}<br>
+                    <strong>⚠️ Booking calendar may not work!</strong>`, 
+                    'error'
+                );
+                return false;
+            }
+        }
+
+        async function testStripe() {
+            showResult('stripeResult', '🔄 Testing Stripe integration...', 'info');
+            
+            try {
+                const response = await fetch(`${API_BASE}/payments/test-stripe`, {
+                    method: 'GET',
+                    headers: { 'Accept': 'application/json' },
+                    mode: 'cors'
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    showResult('stripeResult', 
+                        `✅ Stripe is configured!<br>
+                        ${data.message}<br>
+                        Environment: ${data.environment}<br>
+                        Webhook configured: ${data.hasWebhookSecret ? 'Yes' : 'No'}<br>
+                        <strong>✓ Payment processing ready!</strong>`, 
+                        'success'
+                    );
+                    return true;
+                } else {
+                    const errorData = await response.json();
+                    throw new Error(errorData.error || `HTTP ${response.status}`);
+                }
+            } catch (error) {
+                showResult('stripeResult', 
+                    `❌ Stripe test failed: ${error.message}<br>
+                    <strong>Check:</strong> STRIPE_SECRET_KEY environment variable<br>
+                    <strong>❌ Payment processing NOT working!</strong>`, 
+                    'error'
+                );
+                return false;
+            }
+        }
+
+        async function testFullBooking() {
+            showResult('bookingResult', '🔄 Submitting test booking...', 'info');
+            
+            const bookingData = {
+                clientName: document.getElementById('testName').value,
+                clientEmail: document.getElementById('testEmail').value,
+                projectSpecs: document.getElementById('testSpecs').value,
+                bookingMonth: 'July 2025',
+                projectType: document.getElementById('testService').value,
+                basePrice: getServicePrice(document.getElementById('testService').value),
+                totalPrice: getServicePrice(document.getElementById('testService').value),
+                primaryColor: '#8B4513',
+                secondaryColor: '#D2B48C',
+                accentColor: '#CD853F'
+            };
+            
+            try {
+                const response = await fetch(`${API_BASE}/bookings`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json'
+                    },
+                    mode: 'cors',
+                    body: JSON.stringify(bookingData)
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    showResult('bookingResult', 
+                        `✅ Test booking successful!<br>
+                        Project ID: ${data.projectId}<br>
+                        Client ID: ${data.clientId}<br>
+                        <strong>✓ Database is working!</strong><br>
+                        <strong>✓ Customer bookings will work!</strong>`, 
+                        'success'
+                    );
+                    return true;
+                } else {
+                    const errorData = await response.json();
+                    throw new Error(errorData.error || `HTTP ${response.status}`);
+                }
+            } catch (error) {
+                showResult('bookingResult', 
+                    `❌ Booking failed: ${error.message}<br>
+                    <strong>❌ Customer bookings will NOT work!</strong>`, 
+                    'error'
+                );
+                return false;
+            }
+        }
+
+        async function getDebugInfo() {
+            showResult('debugResult', '🔄 Getting database information...', 'info');
+            
+            try {
+                const response = await fetch(`${API_BASE}/bookings/debug`, {
+                    method: 'GET',
+                    headers: { 'Accept': 'application/json' },
+                    mode: 'cors'
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    showResult('debugResult', 
+                        `✅ Database information:<br>
+                        Total projects: ${data.totalProjects}<br>
+                        Bookings by month: <pre>${JSON.stringify(data.bookingsByMonth, null, 2)}</pre>
+                        Recent projects: <pre>${JSON.stringify(data.allProjects.slice(0, 3), null, 2)}</pre>`, 
+                        'success'
+                    );
+                    return true;
+                } else {
+                    throw new Error(`HTTP ${response.status}`);
+                }
+            } catch (error) {
+                showResult('debugResult', 
+                    `❌ Debug info failed: ${error.message}`, 
+                    'error'
+                );
+                return false;
+            }
+        }
+
+        async function runAllTests() {
+            showResult('quickActionsResult', '🚀 Running comprehensive system test...', 'info');
+            
+            const tests = [
+                { name: 'Backend Health', func: testHealth },
+                { name: 'Booking Availability', func: testAvailability },
+                { name: 'Stripe Integration', func: testStripe },
+                { name: 'Full Booking Flow', func: testFullBooking },
+                { name: 'Database Debug', func: getDebugInfo }
+            ];
+
+            let passedTests = 0;
+            const totalTests = tests.length;
+
+            for (const test of tests) {
+                console.log(`Running ${test.name}...`);
+                const result = await test.func();
+                if (result) passedTests++;
+                
+                // Brief pause between tests
+                await new Promise(resolve => setTimeout(resolve, 1000));
+            }
+
+            const successRate = (passedTests / totalTests) * 100;
+            let status, message;
+
+            if (successRate === 100) {
+                status = 'online';
+                message = `🎉 ALL TESTS PASSED! (${passedTests}/${totalTests})<br><strong>✅ YOUR SITE IS READY FOR CUSTOMERS!</strong>`;
+                updateSystemStatus('online');
+            } else if (successRate >= 60) {
+                status = 'warning';
+                message = `⚠️ Some tests failed (${passedTests}/${totalTests} passed)<br><strong>Fix failed tests before going live</strong>`;
+                updateSystemStatus('warning');
+            } else {
+                status = 'offline';
+                message = `❌ Critical failures (${passedTests}/${totalTests} passed)<br><strong>System NOT ready for customers</strong>`;
+                updateSystemStatus('offline');
+            }
+
+            showResult('quickActionsResult', message, successRate === 100 ? 'success' : 'error');
+        }
+
+        function clearResults() {
+            const resultElements = ['healthResult', 'availabilityResult', 'stripeResult', 'bookingResult', 'debugResult', 'quickActionsResult'];
+            resultElements.forEach(id => {
+                const element = document.getElementById(id);
+                if (element) element.innerHTML = '';
+            });
+            testResults = {};
+            updateSystemStatus('warning', '<span class="status-indicator status-warning"></span>Ready to test...');
+            showResult('quickActionsResult', '🧹 Results cleared. Run tests again.', 'info');
+        }
+
+        function exportResults() {
+            const report = {
+                timestamp: new Date().toISOString(),
+                website: 'Cocoa Code',
+                results: testResults,
+                summary: {
+                    totalTests: Object.keys(testResults).length,
+                    passedTests: Object.values(testResults).filter(r => r.type === 'success').length
+                }
+            };
+
+            const blob = new Blob([JSON.stringify(report, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `cocoa-code-test-results-${new Date().toISOString().split('T')[0]}.json`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+
+            showResult('quickActionsResult', '📄 Test results exported successfully!', 'success');
+        }
+
+        function getServicePrice(serviceType) {
+            const prices = {
+                'landing': 800,
+                'business': 2500,
+                'ecommerce': 2000,
+                'webapp': 3000,
+                'custom': 4000
+            };
+            return prices[serviceType] || 0;
+        }
+
+        // Auto-run health check on page load
+        window.onload = function() {
+            console.log('🍫 Cocoa Code Backend Tester loaded');
+            setTimeout(() => {
+                testHealth().then(success => {
+                    if (success) {
+                        updateSystemStatus('online');
+                    } else {
+                        updateSystemStatus('offline');
+                    }
+                });
+            }, 1000);
+        };
+    </script>
+</body>
+</html>
