@@ -260,38 +260,24 @@
             </button>
         </section>
     </div>
-
-    <!-- Update your payment modal in index.html -->
+<!-- Replace your payment modal section with this -->
 <div id="paymentModal" class="modal">
     <div class="modal-content">
         <span class="close" onclick="closeModal()">&times;</span>
         <h2 style="margin-bottom: 1rem;">Complete Your Payment</h2>
         <p>Your project total: $<span id="modalTotal">0</span> AUD</p>
         
-        <!-- Test Mode Notice -->
-        <div style="background: #fff3cd; border: 1px solid #ffeaa7; border-radius: 8px; padding: 1rem; margin: 1rem 0;">
-            <h4 style="color: #856404; margin-bottom: 0.5rem;">🧪 Test Mode</h4>
-            <p style="color: #856404; font-size: 0.9rem; margin: 0;">
-                This is a demo payment system. Use these test card numbers:
-            </p>
-            <div style="margin-top: 0.5rem; font-family: monospace; font-size: 0.85rem;">
-                <div><strong>Success:</strong> 4242 4242 4242 4242</div>
-                <div><strong>Declined:</strong> 4000 0000 0000 0002</div>
-                <div><strong>Any future date, any CVC</strong></div>
-            </div>
-        </div>
-        
         <p style="margin: 1rem 0;">Choose your preferred payment method:</p>
         
         <div class="payment-options">
             <button class="btn btn-primary" onclick="processPayment('credit')">
-                💳 Credit Card (Test)
+                💳 Credit Card
             </button>
             <button class="btn" onclick="processPayment('paypal')">
-                🅿️ PayPal (Demo)
+                🅿️ PayPal
             </button>
             <button class="btn" onclick="processPayment('afterpay')" style="background: #B2FCE4; color: #000;">
-                ⚡ Afterpay (Demo)
+                ⚡ Afterpay
             </button>
         </div>
         
