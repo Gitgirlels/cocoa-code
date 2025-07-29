@@ -392,68 +392,88 @@ function validateForm() {
     return isValid;
 }
 
-// PRODUCTION PAYMENT PROCESSING
+// Replace the processPayment function in your script.js with this improved version
+
 async function processPayment(method) {
     try {
-        showNotification('Preparing payment...', 'info');
+        console.log('🚀 Starting payment process with method:', method);
+        showNotification('Starting payment process...', 'info');
         
-        // Ensure API is connected
-        if (!isOnlineMode) {
-            throw new Error('Unable to connect to payment service. Please try again later.');
-        }
-
-        // Validate form data
+        // Validate form first
         if (!validateForm()) {
             throw new Error('Please fill in all required fields correctly.');
         }
 
-        // Collect booking data
-        const bookingData = collectFormData();
-        
+        // Check if service is selected
         if (!selectedService || selectedService.price <= 0) {
             throw new Error('Please select a valid service package.');
         }
 
-        showNotification('Creating booking...', 'info');
+        // Ensure API connection
+        if (!isOnlineMode) {
+            console.log('❌ API not connected, attempting reconnection...');
+            const connected = await initializeApiConnection();
+            if (!connected) {
+                throw new Error('Unable to connect to payment service. Please check your internet connection and try again.');
+            }
+        }
 
-        // Step 1: Create the booking first
-        const bookingResponse = await createBooking(bookingData);
+        showNotification('Creating your booking...', 'info');
+
+        // Step 1: Create the booking
+        const bookingData = collectFormData();
+        console.log('📝 Booking data:', bookingData);
+        
+        const bookingResponse = await createBookingWithRetry(bookingData);
         
         if (!bookingResponse.success) {
             throw new Error(bookingResponse.error || 'Failed to create booking');
         }
 
         const projectId = bookingResponse.projectId;
-        console.log('✅ Booking created:', projectId);
+        console.log('✅ Booking created successfully:', projectId);
 
         // Step 2: Create payment intent
-        showNotification('Processing payment...', 'info');
+        showNotification('Setting up secure payment...', 'info');
         
-        const paymentIntent = await createPaymentIntent({
+        const paymentData = {
             amount: totalAmount,
             projectId: projectId,
             paymentMethod: method,
             currency: 'aud'
-        });
+        };
+        
+        console.log('💳 Creating payment intent:', paymentData);
+        const paymentIntent = await createPaymentIntentWithRetry(paymentData);
 
         if (!paymentIntent.success) {
-            throw new Error(paymentIntent.error || 'Failed to create payment');
+            throw new Error(paymentIntent.error || 'Failed to initialize payment');
         }
 
-        console.log('💳 Payment intent created:', paymentIntent.paymentIntentId);
+        console.log('✅ Payment intent created:', paymentIntent.paymentIntentId);
 
-        // Step 3: Process payment (simplified for demo)
-        showNotification('Finalizing payment...', 'info');
+        // Step 3: Simulate payment processing (replace with real Stripe integration later)
+        showNotification('Processing payment securely...', 'info');
+        
+        // Simulate payment delay
         await new Promise(resolve => setTimeout(resolve, 2000));
 
         // Step 4: Confirm payment
-        await confirmPayment({
+        showNotification('Confirming payment...', 'info');
+        
+        const confirmationResult = await confirmPaymentWithRetry({
             paymentIntentId: paymentIntent.paymentIntentId,
             projectId: projectId
         });
 
+        if (!confirmationResult.paymentStatus === 'completed') {
+            throw new Error('Payment confirmation failed');
+        }
+
         // Success!
+        console.log('🎉 Payment process completed successfully');
         showNotification('✅ Payment successful! Booking confirmed.', 'success');
+        
         closeModal();
         resetForm();
         
@@ -464,70 +484,157 @@ async function processPayment(method) {
     } catch (error) {
         console.error('❌ Payment processing error:', error);
         showNotification(`Payment failed: ${error.message}`, 'error');
+        
+        // Don't close modal on error so user can try again
     }
 }
 
-// Create payment intent on the backend
-async function createPaymentIntent(paymentData) {
-    try {
-        const response = await fetch(`${currentApiUrl}/payments/create-intent`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Accept': 'application/json'
-            },
-            body: JSON.stringify(paymentData),
-            mode: 'cors',
-            credentials: 'omit'
-        });
-
-        const data = await response.json();
-
-        if (response.ok) {
-            return {
-                success: true,
-                clientSecret: data.clientSecret,
-                paymentIntentId: data.paymentIntentId,
-                paymentId: data.paymentId
-            };
-        } else {
-            throw new Error(data.error || `HTTP ${response.status}`);
+// Enhanced booking creation with better retry logic
+async function createBookingWithRetry(bookingData, maxRetries = 3) {
+    for (let attempt = 1; attempt <= maxRetries; attempt++) {
+        try {
+            console.log(`📝 Creating booking (attempt ${attempt}/${maxRetries})`);
+            
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 20000); // 20 second timeout
+            
+            const response = await fetch(`${currentApiUrl}/bookings`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json'
+                },
+                body: JSON.stringify(bookingData),
+                signal: controller.signal,
+                mode: 'cors',
+                credentials: 'omit'
+            });
+            
+            clearTimeout(timeoutId);
+            
+            const data = await response.json();
+            
+            if (response.ok) {
+                return {
+                    success: true,
+                    projectId: data.projectId,
+                    message: data.message
+                };
+            } else {
+                // Handle specific error cases
+                if (response.status === 400 && data.error?.includes('fully booked')) {
+                    throw new Error(`${bookingData.bookingMonth} is fully booked. Please select a different month.`);
+                }
+                if (response.status === 404) {
+                    throw new Error('Booking service not available. Please try again later.');
+                }
+                throw new Error(data.error || `Booking failed (HTTP ${response.status})`);
+            }
+            
+        } catch (error) {
+            console.error(`Booking attempt ${attempt} failed:`, error.message);
+            
+            if (error.name === 'AbortError') {
+                console.error('Request timed out');
+            }
+            
+            if (attempt === maxRetries) {
+                return {
+                    success: false,
+                    error: `Failed to create booking after ${maxRetries} attempts: ${error.message}`
+                };
+            }
+            
+            // Wait before retrying (exponential backoff)
+            await new Promise(resolve => setTimeout(resolve, attempt * 2000));
         }
-    } catch (error) {
-        console.error('Payment intent creation failed:', error);
-        return {
-            success: false,
-            error: error.message
-        };
     }
 }
 
-// Confirm payment on the backend
-async function confirmPayment(confirmationData) {
-    try {
-        const response = await fetch(`${currentApiUrl}/payments/confirm`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Accept': 'application/json'
-            },
-            body: JSON.stringify(confirmationData),
-            mode: 'cors',
-            credentials: 'omit'
-        });
+// Enhanced payment intent creation with retry
+async function createPaymentIntentWithRetry(paymentData, maxRetries = 3) {
+    for (let attempt = 1; attempt <= maxRetries; attempt++) {
+        try {
+            console.log(`💳 Creating payment intent (attempt ${attempt}/${maxRetries})`);
+            
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 15000);
+            
+            const response = await fetch(`${currentApiUrl}/payments/create-intent`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json'
+                },
+                body: JSON.stringify(paymentData),
+                signal: controller.signal,
+                mode: 'cors',
+                credentials: 'omit'
+            });
 
-        const data = await response.json();
+            clearTimeout(timeoutId);
+            const data = await response.json();
 
-        if (!response.ok) {
-            throw new Error(data.error || `HTTP ${response.status}`);
+            if (response.ok) {
+                return {
+                    success: true,
+                    clientSecret: data.clientSecret,
+                    paymentIntentId: data.paymentIntentId,
+                    paymentId: data.paymentId
+                };
+            } else {
+                throw new Error(data.error || `HTTP ${response.status}`);
+            }
+            
+        } catch (error) {
+            console.error(`Payment intent attempt ${attempt} failed:`, error.message);
+            
+            if (attempt === maxRetries) {
+                return {
+                    success: false,
+                    error: `Failed to create payment intent after ${maxRetries} attempts: ${error.message}`
+                };
+            }
+            
+            await new Promise(resolve => setTimeout(resolve, attempt * 1000));
         }
+    }
+}
 
-        console.log('✅ Payment confirmed:', data);
-        return data;
+// Enhanced payment confirmation with retry
+async function confirmPaymentWithRetry(confirmationData, maxRetries = 3) {
+    for (let attempt = 1; attempt <= maxRetries; attempt++) {
+        try {
+            console.log(`✅ Confirming payment (attempt ${attempt}/${maxRetries})`);
+            
+            const response = await fetch(`${currentApiUrl}/payments/confirm`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json'
+                },
+                body: JSON.stringify(confirmationData),
+                mode: 'cors',
+                credentials: 'omit'
+            });
 
-    } catch (error) {
-        console.error('Payment confirmation failed:', error);
-        throw error;
+            const data = await response.json();
+
+            if (response.ok) {
+                return data;
+            } else {
+                throw new Error(data.error || `HTTP ${response.status}`);
+            }
+            
+        } catch (error) {
+            console.error(`Payment confirmation attempt ${attempt} failed:`, error.message);
+            
+            if (attempt === maxRetries) {
+                throw error;
+            }
+            
+            await new Promise(resolve => setTimeout(resolve, attempt * 1000));
+        }
     }
 }
 
