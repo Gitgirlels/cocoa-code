@@ -72,12 +72,51 @@ body {
     padding: 0 2rem;
 }
 
+
+.last-updated {
+    background: 
+    #D2B48C;
+    padding: 10px;
+    border-radius: 10px;
+    border-left: 5px solid 
+    #8B4513;
+    margin-bottom: 30px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  
+  .last-updated::before {
+    content: "🕒";
+    font-size: 1.5rem;
+  }
+
 .hero {
     text-align: center;
     padding: 4rem 0;
     background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cpath d='M10 10h80v80H10z' fill='none' stroke='%23654321' stroke-width='0.5' opacity='0.1'/%3E%3C/svg%3E") repeat;
 }
 
+.project-timeline {
+    background: var(--light-brown);
+    padding: 1.5rem;
+    border-radius: 10px;
+    margin-top: 2rem;
+    border: 2px solid var(--medium-brown);
+  }
+  
+  .project-timeline h4 {
+    color: var(--dark-brown);
+    margin-bottom: 1rem;
+  }
+  
+  .project-timeline p {
+    margin-bottom: 0.5rem;
+  }
+  
+  .project-timeline p:last-child {
+    margin-bottom: 0;
+  }
 .paper-card {
     background: var(--cream);
     border: 2px solid var(--dark-brown);
