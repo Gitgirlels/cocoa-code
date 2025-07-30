@@ -1,0 +1,400 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cocoa Code - Admin Panel</title>
+    <style>
+        body {
+            font-family: 'Courier New', monospace;
+            background: #f5f5dc;
+            margin: 0;
+            padding: 20px;
+        }
+        .header {
+            background: #8B4513;
+            color: white;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        .inquiry-card {
+            background: white;
+            border: 2px solid #8B4513;
+            border-radius: 10px;
+            padding: 20px;
+            margin: 15px 0;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+        .inquiry-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            flex-wrap: wrap;
+        }
+        .status-badge {
+            padding: 5px 15px;
+            border-radius: 20px;
+            color: white;
+            font-weight: bold;
+            font-size: 12px;
+        }
+        .status-inquiry { background: #f39c12; }
+        .status-quoted { background: #3498db; }
+        .status-approved { background: #2ecc71; }
+        .status-paid { background: #27ae60; }
+        .status-in-progress { background: #9b59b6; }
+        .status-completed { background: #34495e; }
+        .status-cancelled { background: #e74c3c; }
+        
+        .price-tag {
+            background: #8B4513;
+            color: white;
+            padding: 8px 15px;
+            border-radius: 5px;
+            font-weight: bold;
+        }
+        .client-info {
+            background: #f8f9fa;
+            padding: 10px;
+            border-radius: 5px;
+            margin: 10px 0;
+        }
+        .project-details {
+            margin: 15px 0;
+            line-height: 1.6;
+        }
+        .action-buttons {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin-top: 15px;
+        }
+        .btn {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-family: inherit;
+            font-size: 12px;
+            font-weight: bold;
+        }
+        .btn-quote { background: #3498db; color: white; }
+        .btn-approve { background: #2ecc71; color: white; }
+        .btn-start { background: #9b59b6; color: white; }
+        .btn-complete { background: #34495e; color: white; }
+        .btn-cancel { background: #e74c3c; color: white; }
+        .btn:hover { opacity: 0.8; }
+        
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+        .stat-card {
+            background: white;
+            border: 2px solid #8B4513;
+            border-radius: 10px;
+            padding: 15px;
+            text-align: center;
+        }
+        .stat-number {
+            font-size: 2rem;
+            font-weight: bold;
+            color: #8B4513;
+        }
+        .refresh-btn {
+            background: #8B4513;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-bottom: 20px;
+        }
+        .no-inquiries {
+            text-align: center;
+            padding: 40px;
+            color: #666;
+            font-style: italic;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>🍫 Cocoa Code Admin Panel</h1>
+        <p>Manage customer inquiries and bookings</p>
+    </div>
+
+    <button class="refresh-btn" onclick="loadInquiries()">🔄 Refresh Data</button>
+
+    <div class="stats" id="statsContainer">
+        <div class="stat-card">
+            <div class="stat-number" id="totalInquiries">-</div>
+            <div>Total Inquiries</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-number" id="pendingInquiries">-</div>
+            <div>Pending Review</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-number" id="activeProjects">-</div>
+            <div>Active Projects</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-number" id="totalRevenue">$-</div>
+            <div>Potential Revenue</div>
+        </div>
+    </div>
+
+    <div id="inquiriesContainer">
+        <div class="no-inquiries">Loading inquiries...</div>
+    </div>
+
+    <script>
+        const API_BASE = 'https://cocoa-code-backend-production.up.railway.app/api';
+        let inquiries = [];
+
+        // Load inquiries on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            loadInquiries();
+        });
+
+        async function loadInquiries() {
+            try {
+                console.log('Loading inquiries...');
+                
+                // Try to get debug info first (shows recent bookings)
+                const response = await fetch(`${API_BASE}/bookings/debug`);
+                const data = await response.json();
+                
+                console.log('Debug data:', data);
+                
+                // For now, create mock inquiries since we don't have a proper database query
+                // In a real system, you'd fetch actual inquiries from the database
+                inquiries = createMockInquiries(data);
+                
+                displayInquiries(inquiries);
+                updateStats(inquiries);
+                
+            } catch (error) {
+                console.error('Failed to load inquiries:', error);
+                document.getElementById('inquiriesContainer').innerHTML = 
+                    '<div class="no-inquiries">❌ Failed to load inquiries. Check backend connection.</div>';
+            }
+        }
+
+        function createMockInquiries(debugData) {
+            // Create some example inquiries for demonstration
+            return [
+                {
+                    id: 'INQ-001',
+                    clientName: 'Sarah Johnson',
+                    clientEmail: 'sarah@example.com',
+                    projectType: 'business',
+                    projectSpecs: 'Need a professional website for my consulting business with contact forms and service pages.',
+                    bookingMonth: 'August 2025',
+                    totalPrice: 2500,
+                    status: 'inquiry',
+                    createdAt: new Date('2025-07-30T10:00:00Z'),
+                    websiteType: 'business'
+                },
+                {
+                    id: 'INQ-002',
+                    clientName: 'Mike Chen',
+                    clientEmail: 'mike@techstartup.com',
+                    projectType: 'webapp',
+                    projectSpecs: 'Building a SaaS platform for project management with user authentication and payment integration.',
+                    bookingMonth: 'September 2025',
+                    totalPrice: 3000,
+                    status: 'quoted',
+                    createdAt: new Date('2025-07-29T14:30:00Z'),
+                    websiteType: 'business'
+                }
+            ];
+        }
+
+        function displayInquiries(inquiries) {
+            const container = document.getElementById('inquiriesContainer');
+            
+            if (inquiries.length === 0) {
+                container.innerHTML = '<div class="no-inquiries">No inquiries yet. Customers will appear here when they submit project requests.</div>';
+                return;
+            }
+
+            const inquiryCards = inquiries.map(inquiry => `
+                <div class="inquiry-card">
+                    <div class="inquiry-header">
+                        <div>
+                            <h3 style="margin: 0; color: #8B4513;">${inquiry.clientName}</h3>
+                            <small style="color: #666;">ID: ${inquiry.id} • ${new Date(inquiry.createdAt).toLocaleDateString()}</small>
+                        </div>
+                        <div style="display: flex; gap: 10px; align-items: center;">
+                            <span class="status-badge status-${inquiry.status}">${inquiry.status.toUpperCase()}</span>
+                            <span class="price-tag">$${inquiry.totalPrice.toLocaleString()} AUD</span>
+                        </div>
+                    </div>
+                    
+                    <div class="client-info">
+                        <strong>📧 Contact:</strong> ${inquiry.clientEmail}<br>
+                        <strong>📅 Requested Month:</strong> ${inquiry.bookingMonth}<br>
+                        <strong>🎯 Project Type:</strong> ${getServiceDisplayName(inquiry.projectType)}
+                    </div>
+                    
+                    <div class="project-details">
+                        <strong>📋 Project Requirements:</strong><br>
+                        ${inquiry.projectSpecs}
+                    </div>
+                    
+                    <div class="action-buttons">
+                        ${getActionButtons(inquiry)}
+                    </div>
+                </div>
+            `).join('');
+
+            container.innerHTML = inquiryCards;
+        }
+
+        function getActionButtons(inquiry) {
+            switch(inquiry.status) {
+                case 'inquiry':
+                    return `
+                        <button class="btn btn-quote" onclick="updateStatus('${inquiry.id}', 'quoted')">
+                            📋 Send Quote
+                        </button>
+                        <button class="btn btn-cancel" onclick="updateStatus('${inquiry.id}', 'cancelled')">
+                            ❌ Decline
+                        </button>
+                    `;
+                case 'quoted':
+                    return `
+                        <button class="btn btn-approve" onclick="updateStatus('${inquiry.id}', 'approved')">
+                            ✅ Customer Approved
+                        </button>
+                        <button class="btn btn-cancel" onclick="updateStatus('${inquiry.id}', 'cancelled')">
+                            ❌ Customer Declined
+                        </button>
+                    `;
+                case 'approved':
+                    return `
+                        <button class="btn btn-approve" onclick="updateStatus('${inquiry.id}', 'paid')">
+                            💳 Payment Received
+                        </button>
+                    `;
+                case 'paid':
+                    return `
+                        <button class="btn btn-start" onclick="updateStatus('${inquiry.id}', 'in-progress')">
+                            🚀 Start Project
+                        </button>
+                    `;
+                case 'in-progress':
+                    return `
+                        <button class="btn btn-complete" onclick="updateStatus('${inquiry.id}', 'completed')">
+                            ✅ Mark Complete
+                        </button>
+                    `;
+                case 'completed':
+                    return `<span style="color: #2ecc71; font-weight: bold;">✅ Project Completed</span>`;
+                case 'cancelled':
+                    return `<span style="color: #e74c3c; font-weight: bold;">❌ Cancelled</span>`;
+                default:
+                    return '';
+            }
+        }
+
+        function updateStatus(inquiryId, newStatus) {
+            const inquiry = inquiries.find(i => i.id === inquiryId);
+            if (!inquiry) return;
+
+            const confirmMessages = {
+                'quoted': `Send quote to ${inquiry.clientName}?`,
+                'approved': `Mark ${inquiry.clientName}'s project as customer approved?`,
+                'paid': `Confirm payment received from ${inquiry.clientName}?`,
+                'in-progress': `Start working on ${inquiry.clientName}'s project?`,
+                'completed': `Mark ${inquiry.clientName}'s project as completed?`,
+                'cancelled': `Cancel ${inquiry.clientName}'s inquiry?`
+            };
+
+            if (confirm(confirmMessages[newStatus] || 'Update status?')) {
+                inquiry.status = newStatus;
+                displayInquiries(inquiries);
+                updateStats(inquiries);
+                
+                // Show success message
+                showNotification(`✅ ${inquiry.clientName}'s project updated to: ${newStatus.toUpperCase()}`, 'success');
+                
+                // In a real system, you'd send this update to your backend
+                console.log(`Updated inquiry ${inquiryId} to status: ${newStatus}`);
+            }
+        }
+
+        function updateStats(inquiries) {
+            const stats = {
+                total: inquiries.length,
+                pending: inquiries.filter(i => i.status === 'inquiry').length,
+                active: inquiries.filter(i => ['quoted', 'approved', 'paid', 'in-progress'].includes(i.status)).length,
+                revenue: inquiries.filter(i => ['paid', 'in-progress', 'completed'].includes(i.status))
+                                 .reduce((sum, i) => sum + i.totalPrice, 0)
+            };
+
+            document.getElementById('totalInquiries').textContent = stats.total;
+            document.getElementById('pendingInquiries').textContent = stats.pending;
+            document.getElementById('activeProjects').textContent = stats.active;
+            document.getElementById('totalRevenue').textContent = `${stats.revenue.toLocaleString()}`;
+        }
+
+        function getServiceDisplayName(type) {
+            const names = {
+                'landing': 'Landing Page',
+                'business': 'Business Website',
+                'ecommerce': 'Blog Site',
+                'webapp': 'Web Application',
+                'custom': 'Custom Solution'
+            };
+            return names[type] || type;
+        }
+
+        function showNotification(message, type = 'info') {
+            const notification = document.createElement('div');
+            notification.textContent = message;
+            
+            const styles = {
+                success: { bg: '#2ecc71', color: 'white' },
+                error: { bg: '#e74c3c', color: 'white' },
+                info: { bg: '#3498db', color: 'white' }
+            };
+            
+            const style = styles[type] || styles.info;
+            
+            notification.style.cssText = `
+                position: fixed;
+                top: 20px;
+                right: 20px;
+                padding: 15px 20px;
+                border-radius: 8px;
+                background: ${style.bg};
+                color: ${style.color};
+                font-weight: bold;
+                z-index: 10000;
+                box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+                cursor: pointer;
+            `;
+            
+            notification.addEventListener('click', () => {
+                document.body.removeChild(notification);
+            });
+            
+            document.body.appendChild(notification);
+            
+            setTimeout(() => {
+                if (notification.parentNode) {
+                    document.body.removeChild(notification);
+                }
+            }, 4000);
+        }
+    </script>
+</body>
+</html>

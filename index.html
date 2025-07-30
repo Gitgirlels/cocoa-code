@@ -269,24 +269,35 @@
             </button>
         </section>
     </div>
-<!-- Replace your payment modal section with this -->
+
+    <!-- Replace your payment modal section with this updated version -->
 <div id="paymentModal" class="modal">
     <div class="modal-content">
         <span class="close" onclick="closeModal()">&times;</span>
-        <h2 style="margin-bottom: 1rem;">Complete Your Payment</h2>
-        <p>Your project total: $<span id="modalTotal">0</span> AUD</p>
+        <h2 style="margin-bottom: 1rem;">Submit Your Project Inquiry</h2>
+        <p><strong>Estimated Quote: $<span id="modalTotal">0</span> AUD</strong></p>
         
-        <p style="margin: 1rem 0;">Choose your preferred payment method:</p>
+        <div style="background: #fff3cd; border: 1px solid #ffeaa7; border-radius: 8px; padding: 1rem; margin: 1rem 0;">
+            <h4 style="color: #856404; margin-bottom: 0.5rem;">📋 How This Works</h4>
+            <ul style="color: #856404; margin: 0; padding-left: 1.5rem;">
+                <li>Submit your project inquiry below</li>
+                <li>We'll review and send you a detailed quote</li>
+                <li>Payment is processed only after you approve our quote</li>
+                <li>Work begins after payment confirmation</li>
+            </ul>
+        </div>
+        
+        <p style="margin: 1rem 0;">Choose how you'd prefer to pay once approved:</p>
         
         <div class="payment-options">
             <button class="btn btn-primary" onclick="processPayment('credit')">
-                💳 Credit Card
+                💳 Credit Card (When Approved)
             </button>
             <button class="btn" onclick="processPayment('paypal')">
-                🅿️ PayPal
+                🅿️ PayPal (When Approved)
             </button>
             <button class="btn" onclick="processPayment('afterpay')" style="background: #B2FCE4; color: #000;">
-                ⚡ Afterpay
+                ⚡ Afterpay (When Approved)
             </button>
         </div>
         
@@ -302,16 +313,19 @@
             </div>
         </div>
         
-        <p style="margin-top: 1rem; font-size: 0.9rem; color: var(--dark-brown);">
-            🔒 Secure payment processing • 30-day money-back guarantee
-        </p>
+        <div style="background: #d4edda; border: 1px solid #c3e6cb; border-radius: 8px; padding: 1rem; margin-top: 1rem;">
+            <p style="margin: 0; color: #155724; font-weight: bold;">
+                🔒 No payment will be charged now - this is just a project inquiry!
+            </p>
+        </div>
         
         <div style="margin-top: 1rem; font-size: 0.8rem; color: #666;">
-            <strong>Next Steps:</strong><br>
-            1. Complete payment above<br>
-            2. Receive confirmation email<br>
-            3. Project starts within 1-2 business days<br>
-            4. Regular progress updates via email
+            <strong>After submitting your inquiry:</strong><br>
+            1. We'll review your project requirements<br>
+            2. You'll receive a detailed quote via email<br>
+            3. We'll discuss timeline and any questions<br>
+            4. Payment is processed only after you approve everything<br>
+            5. Work begins after payment confirmation
         </div>
     </div>
 </div>

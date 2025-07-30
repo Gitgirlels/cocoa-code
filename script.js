@@ -1,13 +1,13 @@
-// Fixed script.js for Cocoa Code - Addresses API connection and booking issues
+// Updated script.js - Manual booking control (no fake payments)
 let selectedService = null;
 let selectedSubscription = 'basic';
 let selectedExtras = [];
 let totalAmount = 0;
 
-// Updated API Configuration with better fallback handling
+// API Configuration
 const API_ENDPOINTS = [
     'https://cocoa-code-backend-production.up.railway.app/api',
-    '/api' // Netlify proxy fallback
+    '/api'
 ];
 
 let currentApiUrl = API_ENDPOINTS[0];
@@ -47,52 +47,38 @@ document.addEventListener('DOMContentLoaded', async function() {
     updateTotal();
 });
 
-// FIXED: Better API connection testing
+// Test API connection
 async function testApiConnection() {
     console.log('🔄 Testing API connection...');
     
-    for (let i = 0; i < API_ENDPOINTS.length; i++) {
-        currentApiUrl = API_ENDPOINTS[i];
-        console.log(`Testing endpoint: ${currentApiUrl}`);
+    try {
+        const response = await fetch(`${currentApiUrl}/health`, {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json',
+                'Accept': 'application/json'
+            },
+            mode: 'cors'
+        });
         
-        try {
-            const controller = new AbortController();
-            const timeoutId = setTimeout(() => controller.abort(), 8000);
-            
-            const response = await fetch(`${currentApiUrl}/health`, {
-                method: 'GET',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Accept': 'application/json'
-                },
-                signal: controller.signal,
-                mode: 'cors',
-                credentials: 'omit'
-            });
-            
-            clearTimeout(timeoutId);
-            
-            if (response.ok) {
-                const data = await response.json();
-                console.log(`✅ Connected to: ${currentApiUrl}`);
-                isOnlineMode = true;
-                showNotification('✅ Booking system connected', 'success');
-                return true;
-            }
-        } catch (error) {
-            console.warn(`❌ Failed to connect to ${currentApiUrl}:`, error.message);
+        if (response.ok) {
+            const data = await response.json();
+            console.log('✅ Connected to backend:', data);
+            isOnlineMode = true;
+            showNotification('✅ Booking system connected', 'success');
+            return true;
         }
+    } catch (error) {
+        console.warn('❌ API connection failed:', error.message);
     }
     
-    console.warn('⚠️ All API endpoints failed, enabling offline mode');
     isOnlineMode = false;
-    showNotification('⚠️ Using offline mode - limited functionality', 'warning');
+    showNotification('⚠️ Offline mode - bookings will be queued', 'warning');
     return false;
 }
 
-// FIXED: Improved form data collection
+// UPDATED: Collect form data with validation
 function collectFormData() {
-    // Validate required fields first
     const clientName = document.getElementById('clientName')?.value?.trim();
     const clientEmail = document.getElementById('clientEmail')?.value?.trim();
     const projectSpecs = document.getElementById('projectSpecs')?.value?.trim();
@@ -124,157 +110,126 @@ function collectFormData() {
         extraServices: selectedExtras.map(extra => ({
             type: extra.type,
             price: extra.price
-        }))
+        })),
+        status: 'inquiry', // Changed from 'pending' to 'inquiry'
+        paymentStatus: 'not_paid' // Add payment status
     };
 }
 
-// FIXED: Robust booking creation with better error handling
-async function createBooking(bookingData) {
-    console.log('📝 Creating booking with data:', bookingData);
+// UPDATED: Create booking inquiry (not confirmed booking)
+async function createBookingInquiry(bookingData) {
+    console.log('📝 Creating booking inquiry:', bookingData);
     
-    const maxRetries = 3;
-    let lastError = null;
-    
-    for (let attempt = 1; attempt <= maxRetries; attempt++) {
-        try {
-            console.log(`Booking attempt ${attempt}/${maxRetries}`);
-            
-            const controller = new AbortController();
-            const timeoutId = setTimeout(() => controller.abort(), 25000); // Increased timeout
-            
-            const response = await fetch(`${currentApiUrl}/bookings`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Accept': 'application/json',
-                    'Origin': window.location.origin
-                },
-                body: JSON.stringify(bookingData),
-                signal: controller.signal,
-                mode: 'cors',
-                credentials: 'omit'
-            });
-            
-            clearTimeout(timeoutId);
-            
-            const data = await response.json();
-            console.log('Booking response:', { status: response.status, data });
-            
-            if (response.ok) {
-                return {
-                    success: true,
-                    projectId: data.projectId,
-                    clientId: data.clientId,
-                    message: data.message
-                };
-            } else {
-                // Handle specific error cases
-                if (response.status === 400) {
-                    if (data.error?.includes('fully booked')) {
-                        throw new Error(`${bookingData.bookingMonth} is fully booked. Please select a different month.`);
-                    } else if (data.error?.includes('required')) {
-                        throw new Error('Missing required information. Please check all fields.');
-                    }
-                }
-                throw new Error(data.error || `Server error (${response.status})`);
-            }
-            
-        } catch (error) {
-            lastError = error;
-            console.error(`Booking attempt ${attempt} failed:`, error.message);
-            
-            if (error.name === 'AbortError') {
-                lastError = new Error('Request timed out. Please check your internet connection.');
-            }
-            
-            // Don't retry on validation errors
-            if (error.message.includes('required') || error.message.includes('email') || error.message.includes('fully booked')) {
-                throw error;
-            }
-            
-            // Wait before retrying (exponential backoff)
-            if (attempt < maxRetries) {
-                await new Promise(resolve => setTimeout(resolve, attempt * 2000));
-                
-                // Try switching to backup API endpoint
-                if (attempt === 2 && API_ENDPOINTS[1]) {
-                    currentApiUrl = API_ENDPOINTS[1];
-                    console.log(`Switching to backup endpoint: ${currentApiUrl}`);
-                }
-            }
+    try {
+        const response = await fetch(`${currentApiUrl}/bookings`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Accept': 'application/json'
+            },
+            body: JSON.stringify(bookingData),
+            mode: 'cors'
+        });
+        
+        const data = await response.json();
+        
+        if (response.ok) {
+            return {
+                success: true,
+                projectId: data.projectId,
+                clientId: data.clientId,
+                message: data.message
+            };
+        } else {
+            throw new Error(data.error || `Server error (${response.status})`);
         }
+        
+    } catch (error) {
+        console.error('Booking inquiry failed:', error);
+        throw error;
     }
-    
-    throw lastError || new Error('Failed to create booking after multiple attempts');
 }
 
-// FIXED: Enhanced payment processing
+// UPDATED: Process booking inquiry (no fake payment)
 async function processPayment(method) {
     try {
-        console.log('🚀 Starting payment process with method:', method);
+        console.log('📝 Processing booking inquiry with method:', method);
         
-        // First, ensure we have a selected service
+        // Validate form
         if (!selectedService || selectedService.price <= 0) {
             throw new Error('Please select a service package first');
         }
 
         // Update UI to show progress
-        updatePaymentStatus('Preparing booking...', 10);
-        
+        updatePaymentStatus('Preparing your inquiry...', 20);
+
         // Collect and validate form data
         let bookingData;
         try {
             bookingData = collectFormData();
         } catch (error) {
-            throw error; // Re-throw validation errors
+            throw error;
         }
 
         // Test API connection if needed
         if (!isOnlineMode) {
-            updatePaymentStatus('Connecting to booking system...', 20);
+            updatePaymentStatus('Connecting to booking system...', 40);
             const connected = await testApiConnection();
             if (!connected) {
-                throw new Error('Unable to connect to booking system. Please check your internet connection and try again.');
+                throw new Error('Unable to connect to booking system. Please try again later.');
             }
         }
 
-        // Create booking
-        updatePaymentStatus('Creating your booking...', 40);
-        const bookingResult = await createBooking(bookingData);
+        // Create booking inquiry
+        updatePaymentStatus('Submitting your inquiry...', 70);
+        const bookingResult = await createBookingInquiry(bookingData);
         
         if (!bookingResult.success) {
-            throw new Error(bookingResult.error || 'Failed to create booking');
+            throw new Error(bookingResult.error || 'Failed to submit inquiry');
         }
 
-        console.log('✅ Booking created:', bookingResult.projectId);
+        console.log('✅ Booking inquiry created:', bookingResult.projectId);
         
-        // For now, simulate successful payment processing
-        // (In production, you'd integrate with real Stripe here)
-        updatePaymentStatus('Processing payment...', 70);
+        updatePaymentStatus('Inquiry submitted successfully!', 100);
         
-        // Simulate payment delay
-        await new Promise(resolve => setTimeout(resolve, 2000));
-        
-        updatePaymentStatus('Payment confirmed!', 100);
-        
-        // Success!
-        console.log('🎉 Booking and payment completed successfully');
-        
+        // Success - but don't claim payment is processed
         setTimeout(() => {
             hidePaymentStatus();
             closeModal();
-            showSuccessMessage(bookingResult.projectId, 'DEMO-' + Date.now());
+            showInquirySuccessMessage(bookingResult.projectId, bookingData);
             resetForm();
         }, 1500);
 
     } catch (error) {
-        console.error('❌ Payment processing error:', error);
+        console.error('❌ Booking inquiry error:', error);
         hidePaymentStatus();
-        showNotification(`Booking failed: ${error.message}`, 'error');
+        showNotification(`Inquiry failed: ${error.message}`, 'error');
     }
 }
 
-// FIXED: Payment status UI helpers
+// UPDATED: Show inquiry success message (not fake payment confirmation)
+function showInquirySuccessMessage(projectId, bookingData) {
+    const message = `📝 Booking Inquiry Submitted Successfully!
+
+Inquiry ID: ${projectId}
+Service: ${getServiceDisplayName(bookingData.projectType)}
+Total Quote: $${bookingData.totalPrice.toLocaleString()} AUD
+
+📋 What happens next:
+• We'll review your inquiry within 24 hours
+• You'll receive a detailed quote via email
+• We'll discuss timeline and requirements
+• Payment will be processed only after you approve the quote
+
+🚨 IMPORTANT: No payment has been processed yet.
+This is just an inquiry - you'll pay only after approving our quote.
+
+Thank you for your interest in Cocoa Code! ☕`;
+    
+    alert(message);
+}
+
+// Payment status UI helpers
 function updatePaymentStatus(message, progress) {
     const statusDiv = document.getElementById('paymentStatus');
     const statusText = document.getElementById('paymentStatusText');
@@ -480,24 +435,6 @@ function closeModal() {
         document.body.style.overflow = 'auto';
     }
     hidePaymentStatus();
-}
-
-// Show success message
-function showSuccessMessage(projectId, paymentId) {
-    const message = `🎉 Booking Confirmed Successfully!
-
-Project ID: ${projectId}
-Payment ID: ${paymentId}
-
-What happens next:
-• You'll receive a confirmation email within 5 minutes
-• We'll start working on your project within 1-2 business days
-• You'll get progress updates throughout development
-• Expected completion: 1-2 weeks
-
-Thank you for choosing Cocoa Code! ☕`;
-    
-    alert(message);
 }
 
 // Reset form
