@@ -150,10 +150,10 @@ async function createBookingInquiry(bookingData) {
     }
 }
 
-// UPDATED: Process booking inquiry (no fake payment)
+// UPDATED: Process booking request with payment details (not immediate payment)
 async function processPayment(method) {
     try {
-        console.log('📝 Processing booking inquiry with method:', method);
+        console.log('📝 Processing booking request with payment method:', method);
         
         // Validate form
         if (!selectedService || selectedService.price <= 0) {
@@ -161,12 +161,14 @@ async function processPayment(method) {
         }
 
         // Update UI to show progress
-        updatePaymentStatus('Preparing your inquiry...', 20);
+        updatePaymentStatus('Preparing your booking request...', 20);
 
         // Collect and validate form data
         let bookingData;
         try {
             bookingData = collectFormData();
+            // Add payment method to booking data
+            bookingData.preferredPaymentMethod = method;
         } catch (error) {
             throw error;
         }
@@ -180,51 +182,91 @@ async function processPayment(method) {
             }
         }
 
-        // Create booking inquiry
-        updatePaymentStatus('Submitting your inquiry...', 70);
-        const bookingResult = await createBookingInquiry(bookingData);
+        // Create booking request (payment info stored, but not charged yet)
+        updatePaymentStatus('Submitting your booking request...', 70);
+        const bookingResult = await createBookingRequest(bookingData);
         
         if (!bookingResult.success) {
-            throw new Error(bookingResult.error || 'Failed to submit inquiry');
+            throw new Error(bookingResult.error || 'Failed to submit booking request');
         }
 
-        console.log('✅ Booking inquiry created:', bookingResult.projectId);
+        console.log('✅ Booking request submitted:', bookingResult.projectId);
         
-        updatePaymentStatus('Inquiry submitted successfully!', 100);
+        updatePaymentStatus('Booking request submitted successfully!', 100);
         
-        // Success - but don't claim payment is processed
+        // Success - booking request submitted for admin review
         setTimeout(() => {
             hidePaymentStatus();
             closeModal();
-            showInquirySuccessMessage(bookingResult.projectId, bookingData);
+            showBookingRequestSuccessMessage(bookingResult.projectId, bookingData);
             resetForm();
         }, 1500);
 
     } catch (error) {
-        console.error('❌ Booking inquiry error:', error);
+        console.error('❌ Booking request error:', error);
         hidePaymentStatus();
-        showNotification(`Inquiry failed: ${error.message}`, 'error');
+        showNotification(`Booking request failed: ${error.message}`, 'error');
     }
 }
 
-// UPDATED: Show inquiry success message (not fake payment confirmation)
-function showInquirySuccessMessage(projectId, bookingData) {
-    const message = `📝 Booking Inquiry Submitted Successfully!
+// UPDATED: Create booking request (payment details saved but not charged)
+async function createBookingRequest(bookingData) {
+    console.log('📝 Creating booking request with payment details:', bookingData);
+    
+    try {
+        const response = await fetch(`${currentApiUrl}/bookings`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Accept': 'application/json'
+            },
+            body: JSON.stringify({
+                ...bookingData,
+                status: 'pending_review', // Waiting for admin confirmation
+                paymentStatus: 'pending_confirmation' // Payment will process after admin confirms
+            }),
+            mode: 'cors'
+        });
+        
+        const data = await response.json();
+        
+        if (response.ok) {
+            return {
+                success: true,
+                projectId: data.projectId,
+                clientId: data.clientId,
+                message: data.message
+            };
+        } else {
+            throw new Error(data.error || `Server error (${response.status})`);
+        }
+        
+    } catch (error) {
+        console.error('Booking request creation failed:', error);
+        throw error;
+    }
+}
 
-Inquiry ID: ${projectId}
+// UPDATED: Show booking request confirmation message
+function showBookingRequestSuccessMessage(projectId, bookingData) {
+    const message = `📝 Booking Request Submitted Successfully!
+
+Request ID: ${projectId}
 Service: ${getServiceDisplayName(bookingData.projectType)}
-Total Quote: $${bookingData.totalPrice.toLocaleString()} AUD
+Total Amount: ${bookingData.totalPrice.toLocaleString()} AUD
+Payment Method: ${bookingData.preferredPaymentMethod}
 
-📋 What happens next:
-• We'll review your inquiry within 24 hours
-• You'll receive a detailed quote via email
-• We'll discuss timeline and requirements
-• Payment will be processed only after you approve the quote
+🔍 What happens next:
+• We'll review your project request within 24 hours
+• You'll receive an email confirmation shortly
+• Once we confirm your booking, payment will be processed automatically
+• Work begins immediately after payment confirmation
+• Expected completion: 1-2 weeks from project start
 
-🚨 IMPORTANT: No payment has been processed yet.
-This is just an inquiry - you'll pay only after approving our quote.
+💳 Payment Status: Saved securely, will charge after confirmation
+🔒 No payment has been processed yet
 
-Thank you for your interest in Cocoa Code! ☕`;
+Thank you for choosing Cocoa Code! ☕`;
     
     alert(message);
 }
@@ -406,7 +448,6 @@ function validateForm() {
     return isValid;
 }
 
-// Payment modal functions
 function proceedToPayment() {
     if (!selectedService) {
         showNotification('Please select a service package first', 'error');
@@ -424,6 +465,8 @@ function proceedToPayment() {
     if (modal && modalTotal) {
         modalTotal.textContent = totalAmount.toLocaleString();
         modal.style.display = 'block';
+        
+        // Prevent body scroll when modal is open
         document.body.style.overflow = 'hidden';
     }
 }
@@ -432,11 +475,12 @@ function closeModal() {
     const modal = document.getElementById('paymentModal');
     if (modal) {
         modal.style.display = 'none';
+        
+        // Restore body scroll when modal is closed
         document.body.style.overflow = 'auto';
     }
     hidePaymentStatus();
 }
-
 // Reset form
 function resetForm() {
     document.getElementById('bookingForm')?.reset();

@@ -257,17 +257,24 @@
             </form>
         </section>
 
-        <!-- Total Calculator -->
-        <section class="total-calculator">
-            <h2 style="margin-bottom: 1rem;">Project Total</h2>
-            <div id="priceBreakdown"></div>
-            <div class="total-amount">$<span id="totalAmount">0</span> AUD</div>
-            <p style="margin-bottom: 2rem;">*Monthly services billed separately</p>
-            
-            <button class="btn btn-primary" onclick="proceedToPayment()">
-                Book Your Project Now
-            </button>
-        </section>
+       <!-- Replace your existing "Total Calculator" section with this updated version -->
+
+<section class="total-calculator">
+    <h2 style="margin-bottom: 1rem;">Project Total</h2>
+    <div id="priceBreakdown"></div>
+    <div class="total-amount">$<span id="totalAmount">0</span> AUD</div>
+    <p style="margin-bottom: 2rem;">*Monthly services billed separately</p>
+    
+    <button class="btn btn-primary" onclick="proceedToPayment()">
+        📝 Submit Booking Request
+    </button>
+    
+    <div style="margin-top: 1rem; font-size: 0.9rem; color: var(--cream);">
+        <p>🔍 We review all requests within 24 hours</p>
+        <p>💳 Payment processes after our confirmation</p>
+        <p>🚀 Work starts immediately after payment</p>
+    </div>
+</section>
     </div>
 
     <!-- Replace your payment modal section with this updated version -->
@@ -281,8 +288,7 @@
             <h4 style="color: #856404; margin-bottom: 0.5rem;">📋 How This Works</h4>
             <ul style="color: #856404; margin: 0; padding-left: 1.5rem;">
                 <li>Submit your project inquiry below</li>
-                <li>We'll review and send you a detailed quote</li>
-                <li>Payment is processed only after you approve our quote</li>
+                <li>We'll review and confirm the website booking</li>
                 <li>Work begins after payment confirmation</li>
             </ul>
         </div>
@@ -291,13 +297,13 @@
         
         <div class="payment-options">
             <button class="btn btn-primary" onclick="processPayment('credit')">
-                💳 Credit Card (When Approved)
+                💳 Credit Card 
             </button>
             <button class="btn" onclick="processPayment('paypal')">
-                🅿️ PayPal (When Approved)
+                🅿️ PayPal 
             </button>
             <button class="btn" onclick="processPayment('afterpay')" style="background: #B2FCE4; color: #000;">
-                ⚡ Afterpay (When Approved)
+                ⚡ Afterpay 
             </button>
         </div>
         
@@ -322,9 +328,8 @@
         <div style="margin-top: 1rem; font-size: 0.8rem; color: #666;">
             <strong>After submitting your inquiry:</strong><br>
             1. We'll review your project requirements<br>
-            2. You'll receive a detailed quote via email<br>
             3. We'll discuss timeline and any questions<br>
-            4. Payment is processed only after you approve everything<br>
+            4. Payment is processed only after we've confirmed your order
             5. Work begins after payment confirmation
         </div>
     </div>

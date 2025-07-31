@@ -407,6 +407,8 @@ body {
     height: 100%;
     background: rgba(0,0,0,0.8);
     z-index: 1000;
+    overflow-y: auto; /* Allow vertical scrolling */
+    padding: 20px 0; /* Add padding for better experience */
 }
 
 .modal-content {
@@ -415,8 +417,41 @@ body {
     border-radius: 15px;
     padding: 2rem;
     max-width: 500px;
-    margin: 10% auto;
+    width: 90%; /* Responsive width */
+    margin: 20px auto; /* Center with margin */
     text-align: center;
+    position: relative;
+    max-height: 90vh; /* Limit height to viewport */
+    overflow-y: auto; /* Allow scrolling within modal content */
+    box-sizing: border-box;
+}
+
+/* Mobile responsive adjustments */
+@media (max-width: 768px) {
+    .modal {
+        padding: 10px 0;
+    }
+    
+    .modal-content {
+        width: 95%;
+        margin: 10px auto;
+        padding: 1rem;
+        max-height: 90vh;
+    }
+    
+    .payment-options {
+        grid-template-columns: 1fr;
+        gap: 0.5rem;
+    }
+}
+
+/* Fix for very small screens */
+@media (max-height: 600px) {
+    .modal-content {
+        margin: 5px auto;
+        padding: 1rem;
+        max-height: 98vh;
+    }
 }
 
 .close {
