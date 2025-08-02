@@ -277,63 +277,99 @@
 </section>
     </div>
 
-    <!-- Replace your payment modal section with this updated version -->
-<div id="paymentModal" class="modal">
-    <div class="modal-content">
-        <span class="close" onclick="closeModal()">&times;</span>
-        <h2 style="margin-bottom: 1rem;">Submit Your Project Inquiry</h2>
-        <p><strong>Estimated Quote: $<span id="modalTotal">0</span> AUD</strong></p>
-        
-        <div style="background: #fff3cd; border: 1px solid #ffeaa7; border-radius: 8px; padding: 1rem; margin: 1rem 0;">
-            <h4 style="color: #856404; margin-bottom: 0.5rem;">📋 How This Works</h4>
-            <ul style="color: #856404; margin: 0; padding-left: 1.5rem;">
-                <li>Submit your project inquiry below</li>
-                <li>We'll review and confirm the website booking</li>
-                <li>Work begins after payment confirmation</li>
-            </ul>
-        </div>
-        
-        <p style="margin: 1rem 0;">Choose how you'd prefer to pay once approved:</p>
-        
-        <div class="payment-options">
-            <button class="btn btn-primary" onclick="processPayment('credit')">
-                💳 Credit Card 
-            </button>
-            <button class="btn" onclick="processPayment('paypal')">
-                🅿️ PayPal 
-            </button>
-            <button class="btn" onclick="processPayment('afterpay')" style="background: #B2FCE4; color: #000;">
-                ⚡ Afterpay 
-            </button>
-        </div>
-        
-        <!-- Payment Status -->
-        <div id="paymentStatus" style="margin-top: 1rem; display: none;">
-            <div style="padding: 1rem; border-radius: 8px; background: #f0f0f0;">
-                <div id="paymentStatusText">Processing...</div>
-                <div style="margin-top: 0.5rem;">
-                    <div style="width: 100%; background: #ddd; border-radius: 4px; height: 8px;">
-                        <div id="paymentProgress" style="width: 0%; background: #28a745; height: 8px; border-radius: 4px; transition: width 0.3s ease;"></div>
+    <div id="paymentModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeModal()">&times;</span>
+            <h2 style="margin-bottom: 1rem;">Payment Information</h2>
+            <p><strong>Total: $<span id="modalTotal">0</span> AUD</strong></p>
+            
+            <div style="background: #d4edda; border: 1px solid #c3e6cb; border-radius: 8px; padding: 1rem; margin: 1rem 0;">
+                <h4 style="color: #155724; margin-bottom: 0.5rem;">🔒 Secure Payment Setup</h4>
+                <ul style="color: #155724; margin: 0; padding-left: 1.5rem;">
+                    <li>Enter your payment details below</li>
+                    <li>Your card will NOT be charged now</li>
+                    <li>Payment processes only after we confirm your booking</li>
+                    <li>You'll receive email confirmation before any charge</li>
+                </ul>
+            </div>
+            
+            <!-- Payment Form -->
+            <form id="paymentForm">
+                <div class="form-group">
+                    <label for="cardNumber">Card Number *</label>
+                    <input type="text" id="cardNumber" placeholder="1234 5678 9012 3456" maxlength="19" required>
+                </div>
+                
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                    <div class="form-group">
+                        <label for="expiryDate">MM/YY *</label>
+                        <input type="text" id="expiryDate" placeholder="12/26" maxlength="5" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="cvv">CVV *</label>
+                        <input type="text" id="cvv" placeholder="123" maxlength="4" required>
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label for="cardName">Name on Card *</label>
+                    <input type="text" id="cardName" placeholder="John Smith" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="billingAddress">Billing Address *</label>
+                    <input type="text" id="billingAddress" placeholder="123 Main Street" required>
+                </div>
+                
+                <div style="display: grid; grid-template-columns: 2fr 1fr 1fr; gap: 1rem;">
+                    <div class="form-group">
+                        <label for="billingCity">City *</label>
+                        <input type="text" id="billingCity" placeholder="Sydney" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="billingState">State *</label>
+                        <select id="billingState" required>
+                            <option value="">Select</option>
+                            <option value="NSW">NSW</option>
+                            <option value="VIC">VIC</option>
+                            <option value="QLD">QLD</option>
+                            <option value="WA">WA</option>
+                            <option value="SA">SA</option>
+                            <option value="TAS">TAS</option>
+                            <option value="ACT">ACT</option>
+                            <option value="NT">NT</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="billingPostcode">Postcode *</label>
+                        <input type="text" id="billingPostcode" placeholder="2000" maxlength="4" required>
+                    </div>
+                </div>
+            </form>
+            
+            <!-- Payment Status -->
+            <div id="paymentStatus" style="margin-top: 1rem; display: none;">
+                <div style="padding: 1rem; border-radius: 8px; background: #f0f0f0;">
+                    <div id="paymentStatusText">Processing...</div>
+                    <div style="margin-top: 0.5rem;">
+                        <div style="width: 100%; background: #ddd; border-radius: 4px; height: 8px;">
+                            <div id="paymentProgress" style="width: 0%; background: #28a745; height: 8px; border-radius: 4px; transition: width 0.3s ease;"></div>
+                        </div>
                     </div>
                 </div>
             </div>
-        </div>
-        
-        <div style="background: #d4edda; border: 1px solid #c3e6cb; border-radius: 8px; padding: 1rem; margin-top: 1rem;">
-            <p style="margin: 0; color: #155724; font-weight: bold;">
-                🔒 No payment will be charged now - this is just a project inquiry!
-            </p>
-        </div>
-        
-        <div style="margin-top: 1rem; font-size: 0.8rem; color: #666;">
-            <strong>After submitting your inquiry:</strong><br>
-            1. We'll review your project requirements<br>
-            3. We'll discuss timeline and any questions<br>
-            4. Payment is processed only after we've confirmed your order
-            5. Work begins after payment confirmation
+            
+            <button class="btn btn-primary" onclick="submitBookingWithPayment()" id="submitPaymentBtn" style="width: 100%; margin-top: 1rem;">
+                📝 Submit Booking Request
+            </button>
+            
+            <div style="background: #fff3cd; border: 1px solid #ffeaa7; border-radius: 8px; padding: 1rem; margin-top: 1rem;">
+                <p style="margin: 0; color: #856404; font-weight: bold;">
+                    🔒 Your card details are encrypted and secure. No payment will be processed until we confirm your booking and send you an email notification.
+                </p>
+            </div>
         </div>
     </div>
-</div>
 
     <footer class="site-footer">
         <div class="wrapper">

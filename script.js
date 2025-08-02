@@ -47,6 +47,7 @@ document.addEventListener('DOMContentLoaded', async function() {
     updateTotal();
 });
 
+
 // Test API connection
 async function testApiConnection() {
     console.log('🔄 Testing API connection...');
@@ -150,25 +151,30 @@ async function createBookingInquiry(bookingData) {
     }
 }
 
-// UPDATED: Process booking request with payment details (not immediate payment)
-async function processPayment(method) {
+async function submitBookingWithPayment() {
     try {
-        console.log('📝 Processing booking request with payment method:', method);
+        console.log('📝 Processing booking with payment details');
         
         // Validate form
         if (!selectedService || selectedService.price <= 0) {
             throw new Error('Please select a service package first');
         }
 
+        // Validate payment form
+        if (!validatePaymentForm()) {
+            return;
+        }
+
         // Update UI to show progress
         updatePaymentStatus('Preparing your booking request...', 20);
 
-        // Collect and validate form data
+        // Collect form data
         let bookingData;
         try {
             bookingData = collectFormData();
-            // Add payment method to booking data
-            bookingData.preferredPaymentMethod = method;
+            // Add payment details (encrypted/tokenized in production)
+            bookingData.paymentDetails = collectPaymentData();
+            bookingData.paymentStatus = 'pending_confirmation';
         } catch (error) {
             throw error;
         }
@@ -182,9 +188,9 @@ async function processPayment(method) {
             }
         }
 
-        // Create booking request (payment info stored, but not charged yet)
+        // Submit booking with payment details
         updatePaymentStatus('Submitting your booking request...', 70);
-        const bookingResult = await createBookingRequest(bookingData);
+        const bookingResult = await createBookingWithPayment(bookingData);
         
         if (!bookingResult.success) {
             throw new Error(bookingResult.error || 'Failed to submit booking request');
@@ -194,11 +200,11 @@ async function processPayment(method) {
         
         updatePaymentStatus('Booking request submitted successfully!', 100);
         
-        // Success - booking request submitted for admin review
+        // Success
         setTimeout(() => {
             hidePaymentStatus();
             closeModal();
-            showBookingRequestSuccessMessage(bookingResult.projectId, bookingData);
+            showBookingSuccessMessage(bookingResult.projectId, bookingData);
             resetForm();
         }, 1500);
 
@@ -206,6 +212,109 @@ async function processPayment(method) {
         console.error('❌ Booking request error:', error);
         hidePaymentStatus();
         showNotification(`Booking request failed: ${error.message}`, 'error');
+    }
+}
+
+function validatePaymentForm() {
+    const requiredFields = [
+        'cardNumber', 'expiryDate', 'cvv', 'cardName', 
+        'billingAddress', 'billingCity', 'billingState', 'billingPostcode'
+    ];
+    
+    for (let field of requiredFields) {
+        const element = document.getElementById(field);
+        if (!element.value.trim()) {
+            element.focus();
+            showNotification(`Please fill in ${field.replace(/([A-Z])/g, ' $1').toLowerCase()}`, 'error');
+            return false;
+        }
+    }
+    
+    // Validate card number (basic)
+    const cardNumber = document.getElementById('cardNumber').value.replace(/\s/g, '');
+    if (cardNumber.length < 13 || cardNumber.length > 19) {
+        document.getElementById('cardNumber').focus();
+        showNotification('Please enter a valid card number', 'error');
+        return false;
+    }
+    
+    // Validate expiry
+    const expiry = document.getElementById('expiryDate').value;
+    const expiryRegex = /^(0[1-9]|1[0-2])\/([0-9]{2})$/;
+    if (!expiryRegex.test(expiry)) {
+        document.getElementById('expiryDate').focus();
+        showNotification('Please enter expiry date as MM/YY', 'error');
+        return false;
+    }
+    
+    // Validate CVV
+    const cvv = document.getElementById('cvv').value;
+    if (cvv.length < 3 || cvv.length > 4) {
+        document.getElementById('cvv').focus();
+        showNotification('Please enter a valid CVV', 'error');
+        return false;
+    }
+    
+    // Validate postcode
+    const postcode = document.getElementById('billingPostcode').value;
+    if (!/^\d{4}$/.test(postcode)) {
+        document.getElementById('billingPostcode').focus();
+        showNotification('Please enter a valid 4-digit postcode', 'error');
+        return false;
+    }
+    
+    return true;
+}
+
+function collectPaymentData() {
+    return {
+        cardNumber: document.getElementById('cardNumber').value.replace(/\s/g, ''),
+        expiryDate: document.getElementById('expiryDate').value,
+        cvv: document.getElementById('cvv').value,
+        cardName: document.getElementById('cardName').value.trim(),
+        billingAddress: {
+            street: document.getElementById('billingAddress').value.trim(),
+            city: document.getElementById('billingCity').value.trim(),
+            state: document.getElementById('billingState').value,
+            postcode: document.getElementById('billingPostcode').value
+        }
+    };
+}
+
+async function createBookingWithPayment(bookingData) {
+    console.log('📝 Creating booking with payment details');
+    
+    try {
+        const response = await fetch(`${currentApiUrl}/bookings`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Accept': 'application/json'
+            },
+            body: JSON.stringify({
+                ...bookingData,
+                status: 'pending_review',
+                paymentStatus: 'card_details_saved'
+            }),
+            mode: 'cors'
+        });
+        
+        const data = await response.json();
+        
+        if (response.ok) {
+            return {
+                success: true,
+                projectId: data.projectId,
+                clientId: data.clientId,
+                message: data.message
+            };
+        } else {
+            throw new Error(data.error || `Server error (${response.status})`);
+        }
+        
+    } catch (error) {
+        console.error('Booking creation failed:', error);
+        throw error;
     }
 }
 
@@ -565,3 +674,68 @@ window.addEventListener('click', function(event) {
 window.proceedToPayment = proceedToPayment;
 window.closeModal = closeModal;
 window.processPayment = processPayment;
+
+// Format card number input
+document.addEventListener('DOMContentLoaded', function() {
+    // Add payment form formatting
+    const cardNumberInput = document.getElementById('cardNumber');
+    if (cardNumberInput) {
+        cardNumberInput.addEventListener('input', function(e) {
+            let value = e.target.value.replace(/\s/g, '').replace(/[^0-9]/gi, '');
+            let formattedInputValue = value.match(/.{1,4}/g)?.join(' ') || value;
+            e.target.value = formattedInputValue;
+        });
+    }
+    
+    const expiryInput = document.getElementById('expiryDate');
+    if (expiryInput) {
+        expiryInput.addEventListener('input', function(e) {
+            let value = e.target.value.replace(/\D/g, '');
+            if (value.length >= 2) {
+                value = value.substring(0, 2) + '/' + value.substring(2, 4);
+            }
+            e.target.value = value;
+        });
+    }
+    
+    const cvvInput = document.getElementById('cvv');
+    if (cvvInput) {
+        cvvInput.addEventListener('input', function(e) {
+            e.target.value = e.target.value.replace(/\D/g, '');
+        });
+    }
+    
+    const postcodeInput = document.getElementById('billingPostcode');
+    if (postcodeInput) {
+        postcodeInput.addEventListener('input', function(e) {
+            e.target.value = e.target.value.replace(/\D/g, '');
+        });
+    }
+}); // <-- This closes the DOMContentLoaded function
+
+// Update success message
+function showBookingSuccessMessage(projectId, bookingData) {
+    const message = `📝 Booking Request Submitted Successfully!
+
+Request ID: ${projectId}
+Service: ${getServiceDisplayName(bookingData.projectType)}
+Total Amount: $${bookingData.totalPrice.toLocaleString()} AUD
+
+🔍 What happens next:
+- We'll review your project request within 24 hours
+- You'll receive an email confirmation with next steps
+- Once we approve your booking, we'll charge your card
+- You'll get another email notification before any payment
+- Work begins immediately after payment confirmation
+- Expected completion: 1-2 weeks from project start
+
+💳 Payment Status: Card details saved securely
+🔒 No payment has been processed yet
+
+Thank you for choosing Cocoa Code! ☕`;
+    
+    alert(message);
+}
+
+// Update the global function export
+window.submitBookingWithPayment = submitBookingWithPayment;

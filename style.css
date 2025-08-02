@@ -528,3 +528,49 @@ body {
     .service-selector {
         grid-template-columns: 1fr;
     }
+    .form-group {
+        margin-bottom: 1rem;
+    }
+    
+    .form-group label {
+        display: block;
+        margin-bottom: 0.5rem;
+        font-weight: bold;
+        color: var(--dark-brown);
+        font-size: 0.9rem;
+    }
+    
+    .form-group input,
+    .form-group select {
+        width: 100%;
+        padding: 0.75rem;
+        border: 2px solid var(--medium-brown);
+        border-radius: 6px;
+        font-family: 'Courier Prime', monospace;
+        font-size: 0.9rem;
+        background: var(--cream);
+    }
+    
+    .form-group input:focus,
+    .form-group select:focus {
+        outline: none;
+        border-color: var(--dark-brown);
+        box-shadow: 0 0 0 2px rgba(139, 69, 19, 0.1);
+    }
+    
+    #paymentForm {
+        margin: 1rem 0;
+    }
+    
+    #paymentForm input[type="text"],
+    #paymentForm select {
+        transition: border-color 0.2s ease;
+    }
+    
+    #paymentForm input[type="text"]:invalid {
+        border-color: #dc3545;
+    }
+    
+    #paymentForm input[type="text"]:valid {
+        border-color: #28a745;
+    }
