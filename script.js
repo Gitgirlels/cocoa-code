@@ -41,6 +41,7 @@ const extraServicePricing = {
 // Initialize on DOM load
 document.addEventListener('DOMContentLoaded', async function() {
     console.log('🚀 Initializing Cocoa Code booking system...');
+    updateBookingMonths(); // ADD THIS LINE
     initializeColorPickers();
     initializeSelectionHandlers();
     await testApiConnection();
@@ -400,6 +401,61 @@ function hidePaymentStatus() {
     }
 }
 
+// Discount codes system
+const discountCodes = {
+    'OWNER100': {
+        type: 'percentage',
+        value: 100,
+        description: 'Owner Test - 100% Off',
+        active: true
+    },
+    'LAUNCH50': {
+        type: 'percentage', 
+        value: 50,
+        description: 'Launch Special - 50% Off',
+        active: true
+    }
+};
+
+let appliedDiscount = null;
+
+// FIXED: Update booking months to current date
+function updateBookingMonths() {
+    const bookingMonthSelect = document.getElementById('bookingMonth');
+    if (!bookingMonthSelect) return;
+
+    const currentDate = new Date();
+    const currentMonth = currentDate.getMonth();
+    const currentYear = currentDate.getFullYear();
+
+    const months = [
+        'January', 'February', 'March', 'April', 'May', 'June',
+        'July', 'August', 'September', 'October', 'November', 'December'
+    ];
+
+    bookingMonthSelect.innerHTML = '<option value="">Select a month</option>';
+
+    for (let i = 0; i < 6; i++) {
+        const monthIndex = (currentMonth + i) % 12;
+        const year = currentYear + Math.floor((currentMonth + i) / 12);
+        const monthName = months[monthIndex];
+        const value = `${monthName} ${year}`;
+        
+        const option = document.createElement('option');
+        option.value = value;
+        
+        if (i === 0) {
+            option.textContent = `This Month (${value})`;
+        } else if (i === 1) {
+            option.textContent = `Next Month (${value})`;
+        } else {
+            option.textContent = `${value}`;
+        }
+        
+        bookingMonthSelect.appendChild(option);
+    }
+}
+
 // Color Picker functionality
 function initializeColorPickers() {
     const colors = ['primaryColor', 'secondaryColor', 'accentColor'];
@@ -469,15 +525,16 @@ function initializeSelectionHandlers() {
 
 // Update total calculation
 function updateTotal() {
-    let total = selectedService ? selectedService.price : 0;
+    let subtotal = selectedService ? selectedService.price : 0;
     
     selectedExtras.forEach(extra => {
         if (!['management'].includes(extra.type)) {
-            total += extra.price;
+            subtotal += extra.price;
         }
     });
     
-    totalAmount = total;
+    const discountAmount = calculateDiscount(subtotal);
+    totalAmount = Math.max(0, subtotal - discountAmount);
     
     const totalElement = document.getElementById('totalAmount');
     if (totalElement) {
@@ -486,6 +543,41 @@ function updateTotal() {
     
     updatePriceBreakdown();
 }
+
+// Apply discount code
+function applyDiscountCode() {
+    const discountInput = document.getElementById('discountCode');
+    const discountStatus = document.getElementById('discountStatus');
+    
+    if (!discountInput || !discountStatus) return;
+    
+    const code = discountInput.value.trim().toUpperCase();
+    const discount = discountCodes[code];
+    
+    if (!discount) {
+        discountStatus.innerHTML = '<span style="color: #721c24;">❌ Invalid discount code</span>';
+        appliedDiscount = null;
+        updateTotal();
+        return;
+    }
+    
+    appliedDiscount = { code, ...discount };
+    discountStatus.innerHTML = `<span style="color: #155724;">✅ Discount applied: ${discount.description}</span>`;
+    updateTotal();
+}
+
+// Calculate discount amount
+function calculateDiscount(subtotal) {
+    if (!appliedDiscount) return 0;
+    
+    if (appliedDiscount.type === 'percentage') {
+        return Math.round((subtotal * appliedDiscount.value / 100) * 100) / 100;
+    }
+    return 0;
+}
+
+// Make functions global
+window.applyDiscountCode = applyDiscountCode;
 
 // Price breakdown display
 function updatePriceBreakdown() {

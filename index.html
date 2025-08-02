@@ -120,6 +120,15 @@
                     <label for="clientEmail">Email Address *</label>
                     <input type="email" id="clientEmail" name="clientEmail" required>
                 </div>
+
+                <div class="form-group">
+                    <label for="discountCode">Discount Code (Optional)</label>
+                    <div style="display: flex; gap: 10px; align-items: center;">
+                        <input type="text" id="discountCode" name="discountCode" placeholder="Enter discount code" style="flex: 1;">
+                        <button type="button" class="btn" onclick="applyDiscountCode()" style="margin: 0;">Apply</button>
+                    </div>
+                    <div id="discountStatus" style="margin-top: 10px; font-size: 0.9rem;"></div>
+                </div>
                 
                 <div class="form-group">
                     <label for="projectSpecs">Project Specifications *</label>
@@ -130,9 +139,7 @@
                     <label for="bookingMonth">Booking Month *</label>
                     <select id="bookingMonth" name="bookingMonth" required>
                         <option value="">Select a month</option>
-                        <option value="July 2025">This Month (July 2025)</option>
-                        <option value="August 2025">Next Month (August 2025)</option>
-                        <option value="September 2025">Future Month (September 2025)</option>
+                       <!-- Months will be populated by JavaScript based on current date --> 
 
                     </select>
                 </div>
