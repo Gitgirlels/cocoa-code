@@ -13,6 +13,18 @@ const API_ENDPOINTS = [
 let currentApiUrl = API_ENDPOINTS[0];
 let isOnlineMode = false;
 
+function getServiceDisplayName(type) {
+    const names = {
+        landing: "Landing Page Website",
+        business: "Business / E-commerce Website",
+        ecommerce: "Blog Website",
+        webapp: "Web Application",
+        custom: "Custom Solution"
+    };
+    return names[type] || "Custom Website";
+}
+
+
 // Service pricing configuration
 const servicePricing = {
     'landing': 800,
@@ -113,9 +125,28 @@ function collectFormData() {
             type: extra.type,
             price: extra.price
         })),
-        status: 'inquiry', // Changed from 'pending' to 'inquiry'
-        paymentStatus: 'not_paid' // Add payment status
+        // ✅ New field for detailed receipt
+        items: [
+            // main service
+            {
+                name: getServiceDisplayName(selectedService?.type),
+                price: selectedService?.price || 0
+            },
+            // subscription
+            {
+                name: `${selectedSubscription} support package`,
+                price: subscriptionPricing[selectedSubscription] || 0
+            },
+            // extras
+            ...selectedExtras.map(extra => ({
+                name: extra.type,
+                price: extra.price
+            }))
+        ],
+        status: 'inquiry',
+        paymentStatus: 'not_paid'
     };
+    
 }
 
 // UPDATED: Create booking inquiry (not confirmed booking)
