@@ -96,7 +96,7 @@ function collectFormData() {
     const clientName = document.getElementById('clientName')?.value?.trim();
     const clientEmail = document.getElementById('clientEmail')?.value?.trim();
     const projectSpecs = document.getElementById('projectSpecs')?.value?.trim();
-    const bookingMonth = document.getElementById('bookingMonth')?.value;
+    const bookingMonth = document.getElementById('bookingMonth')?.value?.trim();
 
     if (!clientName || !clientEmail || !projectSpecs || !bookingMonth) {
         throw new Error('Please fill in all required fields (Name, Email, Project Specs, Booking Month)');
@@ -117,7 +117,7 @@ function collectFormData() {
         primaryColor: document.getElementById('primaryColor')?.value || '#8B4513',
         secondaryColor: document.getElementById('secondaryColor')?.value || '#D2B48C',
         accentColor: document.getElementById('accentColor')?.value || '#CD853F',
-        projectType: selectedService?.type || 'custom',
+        projectType: selectedService?.type ?? 'custom',
         basePrice: selectedService?.price || 0,
         totalPrice: totalAmount,
         subscription: selectedSubscription,
