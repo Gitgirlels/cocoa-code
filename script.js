@@ -555,6 +555,8 @@ function initializeSelectionHandlers() {
 }
 
 // Update total calculation
+// Replace the updateTotal function in your script.js with this fixed version
+
 function updateTotal() {
     let subtotal = selectedService ? selectedService.price : 0;
     
@@ -569,7 +571,8 @@ function updateTotal() {
     
     const totalElement = document.getElementById('totalAmount');
     if (totalElement) {
-        totalElement.textContent = total.toLocaleString();
+        // ✅ FIX: Use totalAmount instead of total
+        totalElement.textContent = totalAmount.toLocaleString();
     }
     
     updatePriceBreakdown();
