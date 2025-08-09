@@ -329,36 +329,40 @@
         }
 
         async function getDebugInfo() {
-            showResult('debugResult', '🔄 Getting database information...', 'info');
+    showResult('debugResult', '🔄 Getting database information...', 'info');
+    
+    try {
+        const response = await fetch(`${API_BASE}/bookings/debug`, {
+            method: 'GET',
+            headers: { 'Accept': 'application/json' },
+            mode: 'cors'
+        });
+        
+        if (response.ok) {
+            const data = await response.json();
             
-            try {
-                const response = await fetch(`${API_BASE}/bookings/debug`, {
-                    method: 'GET',
-                    headers: { 'Accept': 'application/json' },
-                    mode: 'cors'
-                });
-                
-                if (response.ok) {
-                    const data = await response.json();
-                    showResult('debugResult', 
-                        `✅ Database information:<br>
-                        Total projects: ${data.totalProjects}<br>
-                        Bookings by month: <pre>${JSON.stringify(data.bookingsByMonth, null, 2)}</pre>
-                        Recent projects: <pre>${JSON.stringify(data.allProjects.slice(0, 3), null, 2)}</pre>`, 
-                        'success'
-                    );
-                    return true;
-                } else {
-                    throw new Error(`HTTP ${response.status}`);
-                }
-            } catch (error) {
-                showResult('debugResult', 
-                    `❌ Debug info failed: ${error.message}`, 
-                    'error'
-                );
-                return false;
-            }
+            // 🔧 ADD SAFETY CHECK HERE
+            const projects = data?.allProjects?.slice(0, 3) || [];
+            
+            showResult('debugResult', 
+                `✅ Database information:<br>
+                Total projects: ${data.totalProjects || 0}<br>
+                Bookings by month: <pre>${JSON.stringify(data.bookingsByMonth || {}, null, 2)}</pre>
+                Recent projects: <pre>${JSON.stringify(projects, null, 2)}</pre>`, 
+                'success'
+            );
+            return true;
+        } else {
+            throw new Error(`HTTP ${response.status}`);
         }
+    } catch (error) {
+        showResult('debugResult', 
+            `❌ Debug info failed: ${error.message}`, 
+            'error'
+        );
+        return false;
+    }
+}
 
         async function runAllTests() {
             showResult('quickActionsResult', '🚀 Running comprehensive system test...', 'info');
