@@ -28,6 +28,7 @@
         .success { background: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
         .error { background: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
         .info { background: #d1ecf1; color: #0c5460; border: 1px solid #bee5eb; }
+        .warning { background: #fff3cd; color: #856404; border: 1px solid #ffeaa7; }
         button {
             background: #8B4513;
             color: white;
@@ -38,6 +39,9 @@
             margin: 5px;
         }
         button:hover { background: #654321; }
+        button.btn-success { background: #28a745; }
+        button.btn-danger { background: #dc3545; }
+        button.btn-warning { background: #ffc107; color: black; }
         pre {
             background: #f8f9fa;
             border: 1px solid #dee2e6;
@@ -72,6 +76,16 @@
         .status-online { background: #28a745; }
         .status-offline { background: #dc3545; }
         .status-warning { background: #ffc107; }
+        .admin-test {
+            background: #e8f4fd;
+            border: 2px solid #1f77b4;
+            border-radius: 10px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+        .admin-test h2 {
+            color: #1f77b4;
+        }
     </style>
 </head>
 <body>
@@ -95,7 +109,7 @@
     <!-- Availability Check -->
     <div class="test-section">
         <h2>2. Booking Availability Check</h2>
-        <button onclick="testAvailability()">Check July 2025 Availability</button>
+        <button onclick="testAvailability()">Check August 2025 Availability</button>
         <div id="availabilityResult"></div>
     </div>
 
@@ -119,7 +133,7 @@
         </div>
         <div class="form-group">
             <label>Project Description:</label>
-            <textarea id="testSpecs">Test booking for system verification</textarea>
+            <textarea id="testSpecs">Test booking for system verification - checking all backend functionality</textarea>
         </div>
         <div class="form-group">
             <label>Service Type:</label>
@@ -140,18 +154,29 @@
         <div id="debugResult"></div>
     </div>
 
+    <!-- ✅ NEW: Admin Functions Test -->
+    <div class="admin-test">
+        <h2>6. Admin Functions Test</h2>
+        <p>Test approve/decline functionality for admin panel</p>
+        <button onclick="testAdminFunctions()">🔍 Find Bookings to Test</button>
+        <button onclick="testApproveDecline()">🧪 Test Approve/Decline Routes</button>
+        <div id="adminResult"></div>
+    </div>
+
     <!-- Quick Actions -->
     <div class="test-section">
-        <h2>6. Quick Actions</h2>
+        <h2>7. Quick Actions</h2>
         <button onclick="runAllTests()">🚀 Run All Tests</button>
         <button onclick="clearResults()">🧹 Clear Results</button>
         <button onclick="exportResults()">📄 Export Results</button>
+        <button onclick="openAdminPanel()">👨‍💼 Open Admin Panel</button>
         <div id="quickActionsResult"></div>
     </div>
 
     <script>
         const API_BASE = 'https://cocoa-code-backend-production.up.railway.app/api';
         let testResults = {};
+        let testBookings = [];
 
         function showResult(elementId, message, type = 'info') {
             const element = document.getElementById(elementId);
@@ -211,7 +236,7 @@
             showResult('availabilityResult', '🔄 Checking booking availability...', 'info');
             
             try {
-                const response = await fetch(`${API_BASE}/bookings/availability/July%202025`, {
+                const response = await fetch(`${API_BASE}/bookings/availability/August%202025`, {
                     method: 'GET',
                     headers: { 'Accept': 'application/json' },
                     mode: 'cors'
@@ -221,8 +246,9 @@
                     const data = await response.json();
                     showResult('availabilityResult', 
                         `✅ Availability system working!<br>
-                        July 2025: ${data.available ? 'Available' : 'Full'}<br>
+                        August 2025: ${data.available ? 'Available' : 'Full'}<br>
                         Current bookings: ${data.currentBookings}/${data.maxBookings}<br>
+                        Unlimited: ${data.unlimited ? 'Yes' : 'No'}<br>
                         <strong>✓ Booking calendar functional!</strong>`, 
                         'success'
                     );
@@ -254,9 +280,9 @@
                     const data = await response.json();
                     showResult('stripeResult', 
                         `✅ Stripe is configured!<br>
-                        ${data.message}<br>
+                        Has Stripe Key: ${data.hasStripeKey ? 'Yes' : 'No'}<br>
                         Environment: ${data.environment}<br>
-                        Webhook configured: ${data.hasWebhookSecret ? 'Yes' : 'No'}<br>
+                        Webhook configured: ${data.hasStripeWebhook ? 'Yes' : 'No'}<br>
                         <strong>✓ Payment processing ready!</strong>`, 
                         'success'
                     );
@@ -283,7 +309,7 @@
                 clientName: document.getElementById('testName').value,
                 clientEmail: document.getElementById('testEmail').value,
                 projectSpecs: document.getElementById('testSpecs').value,
-                bookingMonth: 'July 2025',
+                bookingMonth: 'August 2025',
                 projectType: document.getElementById('testService').value,
                 basePrice: getServicePrice(document.getElementById('testService').value),
                 totalPrice: getServicePrice(document.getElementById('testService').value),
@@ -309,6 +335,7 @@
                         `✅ Test booking successful!<br>
                         Project ID: ${data.projectId}<br>
                         Client ID: ${data.clientId}<br>
+                        Database Saved: ${data.databaseSaved ? 'Yes' : 'No'}<br>
                         <strong>✓ Database is working!</strong><br>
                         <strong>✓ Customer bookings will work!</strong>`, 
                         'success'
@@ -329,40 +356,151 @@
         }
 
         async function getDebugInfo() {
-    showResult('debugResult', '🔄 Getting database information...', 'info');
-    
-    try {
-        const response = await fetch(`${API_BASE}/bookings/debug`, {
-            method: 'GET',
-            headers: { 'Accept': 'application/json' },
-            mode: 'cors'
-        });
-        
-        if (response.ok) {
-            const data = await response.json();
+            showResult('debugResult', '🔄 Getting database information...', 'info');
             
-            // 🔧 ADD SAFETY CHECK HERE
-            const projects = data?.allProjects?.slice(0, 3) || [];
-            
-            showResult('debugResult', 
-                `✅ Database information:<br>
-                Total projects: ${data.totalProjects || 0}<br>
-                Bookings by month: <pre>${JSON.stringify(data.bookingsByMonth || {}, null, 2)}</pre>
-                Recent projects: <pre>${JSON.stringify(projects, null, 2)}</pre>`, 
-                'success'
-            );
-            return true;
-        } else {
-            throw new Error(`HTTP ${response.status}`);
+            try {
+                const response = await fetch(`${API_BASE}/bookings/debug`, {
+                    method: 'GET',
+                    headers: { 'Accept': 'application/json' },
+                    mode: 'cors'
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    
+                    // ✅ SAFETY CHECK - Fixed allProjects issue
+                    const projects = data?.allProjects || [];
+                    const recentProjects = projects.slice(0, 3);
+                    
+                    showResult('debugResult', 
+                        `✅ Database information:<br>
+                        Total projects: ${data.totalProjects || 0}<br>
+                        Models Available: ${data.modelsAvailable ? 'Yes' : 'No'}<br>
+                        Bookings by month: <pre>${JSON.stringify(data.bookingsByMonth || {}, null, 2)}</pre>
+                        Recent projects (${recentProjects.length}): <pre>${JSON.stringify(recentProjects, null, 2)}</pre>`, 
+                        'success'
+                    );
+                    
+                    // Store for admin testing
+                    testBookings = projects;
+                    return true;
+                } else {
+                    throw new Error(`HTTP ${response.status}`);
+                }
+            } catch (error) {
+                showResult('debugResult', 
+                    `❌ Debug info failed: ${error.message}`, 
+                    'error'
+                );
+                return false;
+            }
         }
-    } catch (error) {
-        showResult('debugResult', 
-            `❌ Debug info failed: ${error.message}`, 
-            'error'
-        );
-        return false;
-    }
-}
+
+        // ✅ NEW: Test admin functions
+        async function testAdminFunctions() {
+            showResult('adminResult', '🔍 Finding bookings to test admin functions...', 'info');
+            
+            try {
+                const response = await fetch(`${API_BASE}/bookings/debug`);
+                const data = await response.json();
+                
+                const bookings = data?.allProjects || [];
+                
+                if (bookings.length === 0) {
+                    showResult('adminResult', 
+                        `⚠️ No bookings found for testing!<br>
+                        <strong>Action:</strong> Create a test booking first.<br>
+                        <button onclick="testFullBooking()">Create Test Booking</button>`, 
+                        'warning'
+                    );
+                    return false;
+                }
+                
+                showResult('adminResult', 
+                    `✅ Found ${bookings.length} bookings for testing:<br>
+                    <strong>Latest booking:</strong> ID ${bookings[0].id} (${bookings[0].status})<br>
+                    Client: ${bookings[0].client?.name || 'Unknown'}<br>
+                    <strong>Ready to test approve/decline functions!</strong>`, 
+                    'success'
+                );
+                
+                testBookings = bookings;
+                return true;
+                
+            } catch (error) {
+                showResult('adminResult', 
+                    `❌ Admin function test failed: ${error.message}`, 
+                    'error'
+                );
+                return false;
+            }
+        }
+
+        async function testApproveDecline() {
+            if (testBookings.length === 0) {
+                showResult('adminResult', 
+                    `⚠️ No bookings available for testing. Run "Find Bookings" first.`, 
+                    'warning'
+                );
+                return;
+            }
+            
+            const testBooking = testBookings[0];
+            showResult('adminResult', '🔄 Testing approve/decline routes...', 'info');
+            
+            try {
+                // Test approve route
+                const approveResponse = await fetch(`${API_BASE}/bookings/${testBooking.id}/approve`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' }
+                });
+                
+                let approveResult = '';
+                if (approveResponse.ok) {
+                    const approveData = await approveResponse.json();
+                    approveResult = `✅ Approve route working: ${approveData.message}`;
+                } else {
+                    const approveError = await approveResponse.json();
+                    approveResult = `❌ Approve failed: ${approveError.error}`;
+                }
+                
+                // Wait a bit
+                await new Promise(resolve => setTimeout(resolve, 1000));
+                
+                // Test decline route
+                const declineResponse = await fetch(`${API_BASE}/bookings/${testBooking.id}/decline`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' }
+                });
+                
+                let declineResult = '';
+                if (declineResponse.ok) {
+                    const declineData = await declineResponse.json();
+                    declineResult = `✅ Decline route working: ${declineData.message}`;
+                } else {
+                    const declineError = await declineResponse.json();
+                    declineResult = `❌ Decline failed: ${declineError.error}`;
+                }
+                
+                showResult('adminResult', 
+                    `📋 Admin Route Test Results:<br>
+                    Test Booking ID: ${testBooking.id}<br>
+                    ${approveResult}<br>
+                    ${declineResult}<br>
+                    <strong>✓ Admin functions tested!</strong>`, 
+                    approveResponse.ok && declineResponse.ok ? 'success' : 'warning'
+                );
+                
+                return approveResponse.ok && declineResponse.ok;
+                
+            } catch (error) {
+                showResult('adminResult', 
+                    `❌ Admin route testing failed: ${error.message}`, 
+                    'error'
+                );
+                return false;
+            }
+        }
 
         async function runAllTests() {
             showResult('quickActionsResult', '🚀 Running comprehensive system test...', 'info');
@@ -372,7 +510,9 @@
                 { name: 'Booking Availability', func: testAvailability },
                 { name: 'Stripe Integration', func: testStripe },
                 { name: 'Full Booking Flow', func: testFullBooking },
-                { name: 'Database Debug', func: getDebugInfo }
+                { name: 'Database Debug', func: getDebugInfo },
+                { name: 'Admin Functions', func: testAdminFunctions },
+                { name: 'Approve/Decline Routes', func: testApproveDecline }
             ];
 
             let passedTests = 0;
@@ -392,9 +532,9 @@
 
             if (successRate === 100) {
                 status = 'online';
-                message = `🎉 ALL TESTS PASSED! (${passedTests}/${totalTests})<br><strong>✅ YOUR SITE IS READY FOR CUSTOMERS!</strong>`;
+                message = `🎉 ALL TESTS PASSED! (${passedTests}/${totalTests})<br><strong>✅ YOUR SITE IS READY FOR CUSTOMERS!</strong><br><strong>✅ ADMIN PANEL IS FUNCTIONAL!</strong>`;
                 updateSystemStatus('online');
-            } else if (successRate >= 60) {
+            } else if (successRate >= 70) {
                 status = 'warning';
                 message = `⚠️ Some tests failed (${passedTests}/${totalTests} passed)<br><strong>Fix failed tests before going live</strong>`;
                 updateSystemStatus('warning');
@@ -408,12 +548,13 @@
         }
 
         function clearResults() {
-            const resultElements = ['healthResult', 'availabilityResult', 'stripeResult', 'bookingResult', 'debugResult', 'quickActionsResult'];
+            const resultElements = ['healthResult', 'availabilityResult', 'stripeResult', 'bookingResult', 'debugResult', 'adminResult', 'quickActionsResult'];
             resultElements.forEach(id => {
                 const element = document.getElementById(id);
                 if (element) element.innerHTML = '';
             });
             testResults = {};
+            testBookings = [];
             updateSystemStatus('warning', '<span class="status-indicator status-warning"></span>Ready to test...');
             showResult('quickActionsResult', '🧹 Results cleared. Run tests again.', 'info');
         }
@@ -426,7 +567,8 @@
                 summary: {
                     totalTests: Object.keys(testResults).length,
                     passedTests: Object.values(testResults).filter(r => r.type === 'success').length
-                }
+                },
+                bookingsFound: testBookings.length
             };
 
             const blob = new Blob([JSON.stringify(report, null, 2)], { type: 'application/json' });
@@ -440,6 +582,11 @@
             URL.revokeObjectURL(url);
 
             showResult('quickActionsResult', '📄 Test results exported successfully!', 'success');
+        }
+
+        function openAdminPanel() {
+            window.open('/admin.html', '_blank');
+            showResult('quickActionsResult', '👨‍💼 Admin panel opened in new tab', 'info');
         }
 
         function getServicePrice(serviceType) {

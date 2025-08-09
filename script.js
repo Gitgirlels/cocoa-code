@@ -24,7 +24,6 @@ function getServiceDisplayName(type) {
     return names[type] || "Custom Website";
 }
 
-
 // Service pricing configuration
 const servicePricing = {
     'landing': 800,
@@ -53,13 +52,15 @@ const extraServicePricing = {
 // Initialize on DOM load
 document.addEventListener('DOMContentLoaded', async function() {
     console.log('🚀 Initializing Cocoa Code booking system...');
-    updateBookingMonths(); // ADD THIS LINE
+    updateBookingMonths();
     initializeColorPickers();
     initializeSelectionHandlers();
     await testApiConnection();
     updateTotal();
+    
+    // ✅ Add payment form formatting here
+    initializePaymentFormFormatting();
 });
-
 
 // Test API connection
 async function testApiConnection() {
@@ -91,7 +92,7 @@ async function testApiConnection() {
     return false;
 }
 
-// UPDATED: Collect form data with validation
+// Collect form data with validation
 function collectFormData() {
     const clientName = document.getElementById('clientName')?.value?.trim();
     const clientEmail = document.getElementById('clientEmail')?.value?.trim();
@@ -125,7 +126,7 @@ function collectFormData() {
             type: extra.type,
             price: extra.price
         })),
-        // ✅ New field for detailed receipt
+        // Detailed receipt items
         items: [
             // main service
             {
@@ -143,46 +144,12 @@ function collectFormData() {
                 price: extra.price
             }))
         ],
-        status: 'inquiry',
-        paymentStatus: 'not_paid'
+        status: 'pending',
+        paymentStatus: 'pending_confirmation'
     };
-    
 }
 
-// UPDATED: Create booking inquiry (not confirmed booking)
-async function createBookingInquiry(bookingData) {
-    console.log('📝 Creating booking inquiry:', bookingData);
-    
-    try {
-        const response = await fetch(`${currentApiUrl}/bookings`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Accept': 'application/json'
-            },
-            body: JSON.stringify(bookingData),
-            mode: 'cors'
-        });
-        
-        const data = await response.json();
-        
-        if (response.ok) {
-            return {
-                success: true,
-                projectId: data.projectId,
-                clientId: data.clientId,
-                message: data.message
-            };
-        } else {
-            throw new Error(data.error || `Server error (${response.status})`);
-        }
-        
-    } catch (error) {
-        console.error('Booking inquiry failed:', error);
-        throw error;
-    }
-}
-
+// Main booking submission function
 async function submitBookingWithPayment() {
     try {
         console.log('📝 Processing booking with payment details');
@@ -208,6 +175,7 @@ async function submitBookingWithPayment() {
             bookingData.paymentDetails = collectPaymentData();
             bookingData.paymentStatus = 'pending_confirmation';
         } catch (error) {
+            hidePaymentStatus();
             throw error;
         }
 
@@ -247,6 +215,7 @@ async function submitBookingWithPayment() {
     }
 }
 
+// Validate payment form
 function validatePaymentForm() {
     const requiredFields = [
         'cardNumber', 'expiryDate', 'cvv', 'cardName', 
@@ -255,8 +224,8 @@ function validatePaymentForm() {
     
     for (let field of requiredFields) {
         const element = document.getElementById(field);
-        if (!element.value.trim()) {
-            element.focus();
+        if (!element || !element.value.trim()) {
+            element?.focus();
             showNotification(`Please fill in ${field.replace(/([A-Z])/g, ' $1').toLowerCase()}`, 'error');
             return false;
         }
@@ -298,6 +267,7 @@ function validatePaymentForm() {
     return true;
 }
 
+// Collect payment data
 function collectPaymentData() {
     return {
         cardNumber: document.getElementById('cardNumber').value.replace(/\s/g, ''),
@@ -313,6 +283,7 @@ function collectPaymentData() {
     };
 }
 
+// Create booking with payment details
 async function createBookingWithPayment(bookingData) {
     console.log('📝 Creating booking with payment details');
     
@@ -325,7 +296,7 @@ async function createBookingWithPayment(bookingData) {
             },
             body: JSON.stringify({
                 ...bookingData,
-                status: 'pending_review',
+                status: 'pending',
                 paymentStatus: 'card_details_saved'
             }),
             mode: 'cors'
@@ -348,68 +319,6 @@ async function createBookingWithPayment(bookingData) {
         console.error('Booking creation failed:', error);
         throw error;
     }
-}
-
-// UPDATED: Create booking request (payment details saved but not charged)
-async function createBookingRequest(bookingData) {
-    console.log('📝 Creating booking request with payment details:', bookingData);
-    
-    try {
-        const response = await fetch(`${currentApiUrl}/bookings`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Accept': 'application/json'
-            },
-            body: JSON.stringify({
-                ...bookingData,
-                status: 'pending_review', // Waiting for admin confirmation
-                paymentStatus: 'pending_confirmation' // Payment will process after admin confirms
-            }),
-            mode: 'cors'
-        });
-        
-        const data = await response.json();
-        
-        if (response.ok) {
-            return {
-                success: true,
-                projectId: data.projectId,
-                clientId: data.clientId,
-                message: data.message
-            };
-        } else {
-            throw new Error(data.error || `Server error (${response.status})`);
-        }
-        
-    } catch (error) {
-        console.error('Booking request creation failed:', error);
-        throw error;
-    }
-}
-
-// UPDATED: Show booking request confirmation message
-function showBookingRequestSuccessMessage(projectId, bookingData) {
-    const message = `📝 Booking Request Submitted Successfully!
-
-Request ID: ${projectId}
-Service: ${getServiceDisplayName(bookingData.projectType)}
-Total Amount: ${bookingData.totalPrice.toLocaleString()} AUD
-Payment Method: ${bookingData.preferredPaymentMethod}
-
-🔍 What happens next:
-• We'll review your project request within 24 hours
-• You'll receive an email confirmation shortly
-• Once we confirm your booking, payment will be processed automatically
-• Work begins immediately after payment confirmation
-• Expected completion: 1-2 weeks from project start
-
-💳 Payment Status: Saved securely, will charge after confirmation
-🔒 No payment has been processed yet
-
-Thank you for choosing Cocoa Code! ☕`;
-    
-    alert(message);
 }
 
 // Payment status UI helpers
@@ -450,7 +359,7 @@ const discountCodes = {
 
 let appliedDiscount = null;
 
-// FIXED: Update booking months to current date
+// Update booking months to current date
 function updateBookingMonths() {
     const bookingMonthSelect = document.getElementById('bookingMonth');
     if (!bookingMonthSelect) return;
@@ -554,9 +463,7 @@ function initializeSelectionHandlers() {
     });
 }
 
-// Update total calculation
-// Replace the updateTotal function in your script.js with this fixed version
-
+// ✅ FIXED: Update total calculation
 function updateTotal() {
     let subtotal = selectedService ? selectedService.price : 0;
     
@@ -571,7 +478,6 @@ function updateTotal() {
     
     const totalElement = document.getElementById('totalAmount');
     if (totalElement) {
-        // ✅ FIX: Use totalAmount instead of total
         totalElement.textContent = totalAmount.toLocaleString();
     }
     
@@ -610,9 +516,6 @@ function calculateDiscount(subtotal) {
     return 0;
 }
 
-// Make functions global
-window.applyDiscountCode = applyDiscountCode;
-
 // Price breakdown display
 function updatePriceBreakdown() {
     const breakdownElement = document.getElementById('priceBreakdown');
@@ -635,6 +538,15 @@ function updatePriceBreakdown() {
             </div>`;
         }
     });
+    
+    // Add discount if applied
+    if (appliedDiscount) {
+        const discountAmount = calculateDiscount(selectedService ? selectedService.price : 0);
+        breakdown += `<div class="price-item" style="color: #28a745;">
+            <span>Discount (${appliedDiscount.code})</span>
+            <span>-$${discountAmount.toLocaleString()} AUD</span>
+        </div>`;
+    }
     
     breakdownElement.innerHTML = breakdown;
 }
@@ -683,6 +595,7 @@ function validateForm() {
     return isValid;
 }
 
+// Modal functions
 function proceedToPayment() {
     if (!selectedService) {
         showNotification('Please select a service package first', 'error');
@@ -716,6 +629,7 @@ function closeModal() {
     }
     hidePaymentStatus();
 }
+
 // Reset form
 function resetForm() {
     document.getElementById('bookingForm')?.reset();
@@ -723,6 +637,7 @@ function resetForm() {
     selectedService = null;
     selectedSubscription = 'basic';
     selectedExtras = [];
+    appliedDiscount = null;
     updateTotal();
 }
 
@@ -788,22 +703,9 @@ function showNotification(message, type = 'info') {
     }, autoRemoveTime);
 }
 
-// Modal event listeners
-window.addEventListener('click', function(event) {
-    const modal = document.getElementById('paymentModal');
-    if (event.target === modal) {
-        closeModal();
-    }
-});
-
-// Global function exports
-window.proceedToPayment = proceedToPayment;
-window.closeModal = closeModal;
-window.processPayment = processPayment;
-
-// Format card number input
-document.addEventListener('DOMContentLoaded', function() {
-    // Add payment form formatting
+// ✅ Payment form formatting (moved to separate function)
+function initializePaymentFormFormatting() {
+    // Format card number input
     const cardNumberInput = document.getElementById('cardNumber');
     if (cardNumberInput) {
         cardNumberInput.addEventListener('input', function(e) {
@@ -813,6 +715,7 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
     
+    // Format expiry date input
     const expiryInput = document.getElementById('expiryDate');
     if (expiryInput) {
         expiryInput.addEventListener('input', function(e) {
@@ -824,6 +727,7 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
     
+    // Format CVV input
     const cvvInput = document.getElementById('cvv');
     if (cvvInput) {
         cvvInput.addEventListener('input', function(e) {
@@ -831,15 +735,16 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
     
+    // Format postcode input
     const postcodeInput = document.getElementById('billingPostcode');
     if (postcodeInput) {
         postcodeInput.addEventListener('input', function(e) {
             e.target.value = e.target.value.replace(/\D/g, '');
         });
     }
-}); // <-- This closes the DOMContentLoaded function
+}
 
-// Update success message
+// Success message
 function showBookingSuccessMessage(projectId, bookingData) {
     const message = `📝 Booking Request Submitted Successfully!
 
@@ -863,5 +768,16 @@ Thank you for choosing Cocoa Code! ☕`;
     alert(message);
 }
 
-// Update the global function export
+// Modal event listeners
+window.addEventListener('click', function(event) {
+    const modal = document.getElementById('paymentModal');
+    if (event.target === modal) {
+        closeModal();
+    }
+});
+
+// ✅ Global function exports (make functions available to HTML)
+window.applyDiscountCode = applyDiscountCode;
+window.proceedToPayment = proceedToPayment;
+window.closeModal = closeModal;
 window.submitBookingWithPayment = submitBookingWithPayment;
