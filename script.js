@@ -92,7 +92,6 @@ async function testApiConnection() {
     return false;
 }
 
-// Collect form data with validation
 function collectFormData() {
     const clientName = document.getElementById('clientName')?.value?.trim();
     const clientEmail = document.getElementById('clientEmail')?.value?.trim();
@@ -103,11 +102,31 @@ function collectFormData() {
         throw new Error('Please fill in all required fields (Name, Email, Project Specs, Booking Month)');
     }
 
-    // Email validation
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(clientEmail)) {
         throw new Error('Please enter a valid email address');
     }
+
+    // Build complete items list
+    const items = [];
+    
+    // Add main service
+    if (selectedService) {
+        items.push({
+            name: getServiceDisplayName(selectedService.type),
+            price: selectedService.price,
+            type: 'service'
+        });
+    }
+    
+    // Add selected extras
+    selectedExtras.forEach(extra => {
+        items.push({
+            name: getExtraDisplayName(extra.type),
+            price: extra.price,
+            type: 'extra'
+        });
+    });
 
     return {
         clientName,
@@ -122,26 +141,8 @@ function collectFormData() {
         basePrice: selectedService?.price || 0,
         totalPrice: totalAmount,
         subscription: selectedSubscription,
-        extraServices: selectedExtras.map(extra => ({
-            type: extra.type,
-            price: extra.price
-        })),
-        // Detailed receipt items
-        items: [
-            // Main service
-            {
-                name: getServiceDisplayName(selectedService?.type),
-                price: selectedService?.price || 0,
-                type: 'service'
-            },
-            // Add selected extras
-            ...selectedExtras.map(extra => ({
-                name: getExtraDisplayName(extra.type),
-                price: extra.price,
-                type: 'extra'
-            }))
-        ],
-        extraServices: selectedExtras, // Keep this too for backwards compatibility
+        extraServices: selectedExtras,
+        items: items, // This is the key part
         status: 'pending',
         paymentStatus: 'pending_confirmation'
     };
