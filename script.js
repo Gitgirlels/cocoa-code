@@ -128,22 +128,20 @@ function collectFormData() {
         })),
         // Detailed receipt items
         items: [
-            // main service
+            // Main service
             {
                 name: getServiceDisplayName(selectedService?.type),
-                price: selectedService?.price || 0
+                price: selectedService?.price || 0,
+                type: 'service'
             },
-            // subscription
-            {
-                name: `${selectedSubscription} support package`,
-                price: subscriptionPricing[selectedSubscription] || 0
-            },
-            // extras
+            // Add selected extras
             ...selectedExtras.map(extra => ({
-                name: extra.type,
-                price: extra.price
+                name: getExtraDisplayName(extra.type),
+                price: extra.price,
+                type: 'extra'
             }))
         ],
+        extraServices: selectedExtras, // Keep this too for backwards compatibility
         status: 'pending',
         paymentStatus: 'pending_confirmation'
     };
