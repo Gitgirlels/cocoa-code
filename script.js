@@ -97,6 +97,15 @@ function collectFormData() {
     const clientEmail = document.getElementById('clientEmail')?.value?.trim();
     const projectSpecs = document.getElementById('projectSpecs')?.value?.trim();
     const bookingMonth = document.getElementById('bookingMonth')?.value?.trim();
+    const primaryColor = document.getElementById('primaryColor')?.value || '#8B4513';
+    const secondaryColor = document.getElementById('secondaryColor')?.value || '#D2B48C';
+    const accentColor = document.getElementById('accentColor')?.value || '#CD853F';
+    
+    console.log('DEBUG - Colors being collected:', {
+        primary: primaryColor,
+        secondary: secondaryColor,
+        accent: accentColor
+    });
 
     if (!clientName || !clientEmail || !projectSpecs || !bookingMonth) {
         throw new Error('Please fill in all required fields (Name, Email, Project Specs, Booking Month)');
@@ -435,14 +444,15 @@ function initializeSelectionHandlers() {
     });
 
     // Subscription selection
-    document.querySelectorAll('.subscription-card').forEach(card => {
-        card.addEventListener('click', function() {
-            document.querySelectorAll('.subscription-card').forEach(c => c.classList.remove('selected'));
-            this.classList.add('selected');
-            selectedSubscription = this.dataset.subscription;
-            updateTotal();
-        });
+document.querySelectorAll('.subscription-card').forEach(card => {
+    card.addEventListener('click', function() {
+        document.querySelectorAll('.subscription-card').forEach(c => c.classList.remove('selected'));
+        this.classList.add('selected');
+        selectedSubscription = this.dataset.subscription;
+        console.log('Selected subscription:', selectedSubscription); // Debug log
+        updateTotal();
     });
+});
 
     // Extra services selection
     document.querySelectorAll('.extra-service').forEach(service => {
