@@ -17,7 +17,7 @@ function getServiceDisplayName(type) {
     const names = {
         landing: "Landing Page Website",
         business: "Business / E-commerce Website",
-        ecommerce: "Blog Website",
+        blog: "Blog Website",
         webapp: "Web Application",
         custom: "Custom Solution"
     };
@@ -26,11 +26,11 @@ function getServiceDisplayName(type) {
 
 // Service pricing configuration
 const servicePricing = {
-    'landing': 800,
-    'business': 2500,
-    'ecommerce': 2000,
-    'webapp': 3000,
-    'custom': 4000
+    'landing': 400,
+    'business': 1500,
+    'blog': 1000,
+    'webapp': 2000,
+    'custom': 2000
 };
 
 const subscriptionPricing = {
@@ -142,7 +142,7 @@ function collectFormData() {
         clientEmail,
         projectSpecs,
         bookingMonth,
-        websiteType: document.getElementById('websiteType')?.value || 'other',
+
         primaryColor: document.getElementById('primaryColor')?.value || '#8B4513',
         secondaryColor: document.getElementById('secondaryColor')?.value || '#D2B48C',
         accentColor: document.getElementById('accentColor')?.value || '#CD853F',
@@ -565,7 +565,7 @@ function getServiceDisplayName(type) {
     const names = {
         'landing': 'Landing Page',
         'business': 'Business Website', 
-        'ecommerce': 'Blog Site',
+        'blog': 'Blog Site',
         'webapp': 'Web Application',
         'custom': 'Custom Solution'
     };
