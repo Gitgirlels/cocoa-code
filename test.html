@@ -138,9 +138,9 @@
         <div class="form-group">
             <label>Service Type:</label>
             <select id="testService">
-                <option value="landing">Landing Page ($800)</option>
-                <option value="business">Business Website ($2500)</option>
-                <option value="webapp">Web App ($3000)</option>
+                <option value="landing">Landing Page ($400)</option>
+                <option value="business">Business Website ($1500)</option>
+                <option value="webapp">Web App ($2000)</option>
             </select>
         </div>
         <button onclick="testFullBooking()">Submit Test Booking</button>
@@ -591,11 +591,11 @@
 
         function getServicePrice(serviceType) {
             const prices = {
-                'landing': 800,
-                'business': 2500,
-                'ecommerce': 2000,
-                'webapp': 3000,
-                'custom': 4000
+                'landing': 400,
+                'business': 1500,
+                'blog': 1000,
+                'webapp': 2000,
+                'custom': 2000
             };
             return prices[serviceType] || 0;
         }
