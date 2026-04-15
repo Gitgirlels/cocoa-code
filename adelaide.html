@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Adelaide Health Care</title>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root { --teal: #2a9d8f; --teal-dk: #1d7a6e; --slate: #264653; --color-text-primary: #1a1a1a; --color-text-secondary: #555; --color-text-tertiary: #999; --color-background-primary: #fff; --color-background-secondary: #f5f5f3; --color-border-tertiary: rgba(0,0,0,0.1); --color-border-secondary: rgba(0,0,0,0.2); --border-radius-md: 8px; --border-radius-lg: 12px; --font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }
+body { font-family: var(--font-sans); background: #fff; color: var(--color-text-primary); }
+.page { max-width: 980px; margin: 0 auto; padding: 0 1.25rem 3rem; }
+
+.nav { display:flex; align-items:center; justify-content:space-between; padding:1.1rem 0; border-bottom:0.5px solid var(--color-border-tertiary); gap:1rem; flex-wrap:wrap; }
+.nav-brand { display:flex; align-items:center; gap:10px; }
+.nav-dot { width:30px; height:30px; border-radius:50%; background:var(--slate); display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+.nav-dot svg { width:20px; height:20px; }
+.nav-name { font-size:15px; font-weight:500; color:var(--color-text-primary); }
+.nav-name span { color:var(--teal); }
+.nav-since { font-size:11px; color:var(--color-text-tertiary); }
+.nav-links { display:flex; gap:1.25rem; }
+.nav-links a { font-size:13px; color:var(--color-text-secondary); text-decoration:none; }
+.nav-links a:hover { color:var(--color-text-primary); }
+.btn-teal { font-size:13px; padding:8px 16px; border-radius:var(--border-radius-md); background:var(--teal); color:#fff; border:none; cursor:pointer; font-family:var(--font-sans); white-space:nowrap; }
+.btn-teal:hover { background:var(--teal-dk); }
+.btn-out { font-size:13px; padding:8px 16px; border-radius:var(--border-radius-md); background:transparent; color:var(--color-text-primary); border:0.5px solid var(--color-border-secondary); cursor:pointer; font-family:var(--font-sans); }
+
+.hero { padding:3rem 0 2.5rem; border-bottom:0.5px solid var(--color-border-tertiary); }
+.eyebrow { font-size:11px; letter-spacing:.08em; text-transform:uppercase; color:var(--teal); margin-bottom:.9rem; }
+.hero-body { display:grid; grid-template-columns:1fr 1fr; gap:3rem; align-items:start; }
+.hero h1 { font-size:34px; font-weight:500; color:var(--color-text-primary); line-height:1.2; margin-bottom:1rem; }
+.hero p { font-size:15px; color:var(--color-text-secondary); line-height:1.7; margin-bottom:1.75rem; }
+.hero-ctas { display:flex; gap:10px; flex-wrap:wrap; }
+.stats { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+.stat { background:var(--color-background-secondary); border-radius:var(--border-radius-md); padding:1rem; }
+.stat-v { font-size:26px; font-weight:500; color:var(--teal); line-height:1; margin-bottom:4px; }
+.stat-l { font-size:12px; color:var(--color-text-secondary); line-height:1.4; }
+
+.alert-banner { margin:1.75rem 0; background:#e8f5f3; border:0.5px solid #a8d8d2; border-radius:var(--border-radius-md); padding:1rem 1.25rem; display:flex; justify-content:space-between; align-items:center; gap:1rem; flex-wrap:wrap; }
+.alert-content { display:flex; align-items:flex-start; gap:10px; flex:1; min-width:0; }
+.alert-pip { width:7px; height:7px; border-radius:50%; background:var(--teal); flex-shrink:0; margin-top:5px; }
+.alert-text { font-size:13px; color:var(--slate); line-height:1.6; }
+.alert-text strong { font-weight:500; }
+.alert-btn { font-size:12px; padding:6px 12px; border-radius:var(--border-radius-md); border:0.5px solid var(--teal); background:transparent; color:var(--teal-dk); cursor:pointer; white-space:nowrap; font-family:var(--font-sans); flex-shrink:0; }
+
+.section { padding:2rem 0; border-top:0.5px solid var(--color-border-tertiary); }
+.section-title { font-size:20px; font-weight:500; color:var(--color-text-primary); margin-bottom:.4rem; }
+.section-sub { font-size:14px; color:var(--color-text-secondary); line-height:1.6; margin-bottom:1.5rem; }
+
+.q-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:10px; }
+.q-card { background:var(--color-background-primary); border:0.5px solid var(--color-border-tertiary); border-radius:var(--border-radius-lg); padding:1.1rem 1.25rem; cursor:pointer; transition:border-color .15s; text-decoration:none; display:block; }
+.q-card:hover { border-color:var(--teal); }
+.q-title { font-size:13px; font-weight:500; color:var(--color-text-primary); margin-bottom:4px; }
+.q-desc { font-size:12px; color:var(--color-text-secondary); line-height:1.5; }
+
+.gallery { display:grid; grid-template-columns:1fr 1fr; grid-template-rows:200px 200px; gap:8px; border-radius:var(--border-radius-lg); overflow:hidden; }
+.g-cell { overflow:hidden; background:var(--color-background-secondary); }
+.g-cell img { width:100%; height:100%; object-fit:cover; display:block; }
+.g-cell.tall { grid-row:span 2; }
+
+.medicare-card { background:var(--color-background-primary); border:0.5px solid var(--color-border-tertiary); border-radius:var(--border-radius-lg); overflow:hidden; }
+.medicare-inner { display:grid; grid-template-columns:1fr 1fr; }
+.medicare-text { padding:1.75rem 2rem; }
+.medicare-badge { display:inline-flex; border-radius:6px; overflow:hidden; margin-bottom:1.25rem; }
+.badge-my { background:#f5c518; padding:6px 10px; font-size:14px; font-weight:700; font-style:italic; color:#1a1a1a; }
+.badge-med { background:#1a8a3c; padding:6px 10px; font-size:14px; font-weight:700; font-style:italic; color:#fff; }
+.medicare-text h3 { font-size:17px; font-weight:500; color:var(--color-text-primary); margin-bottom:.75rem; line-height:1.3; }
+.medicare-text p { font-size:13px; color:var(--color-text-secondary); line-height:1.7; margin-bottom:1.25rem; }
+.medicare-steps { list-style:none; margin-bottom:1.25rem; }
+.medicare-steps li { font-size:13px; color:var(--color-text-secondary); padding:4px 0; display:flex; align-items:flex-start; gap:8px; line-height:1.5; }
+.step-num { width:18px; height:18px; border-radius:50%; background:var(--teal); color:#fff; font-size:10px; font-weight:500; display:flex; align-items:center; justify-content:center; flex-shrink:0; margin-top:1px; }
+.medicare-img { background:#f0f4f3; display:flex; align-items:center; justify-content:center; min-height:200px; overflow:hidden; }
+.medicare-img img { width:100%; height:100%; object-fit:cover; display:block; }
+
+.update-strip { background:var(--color-background-primary); border:0.5px solid var(--color-border-tertiary); border-radius:var(--border-radius-lg); overflow:hidden; }
+.update-header { display:flex; align-items:center; justify-content:space-between; padding:.9rem 1.25rem; border-bottom:0.5px solid var(--color-border-tertiary); }
+.update-label { font-size:12px; font-weight:500; color:var(--color-text-primary); display:flex; align-items:center; gap:8px; }
+.update-dot { width:7px; height:7px; border-radius:50%; background:#e63946; }
+.update-source { font-size:11px; color:var(--color-text-tertiary); }
+.update-body { padding:1.1rem 1.25rem; }
+.update-tag { display:inline-block; font-size:11px; padding:3px 8px; border-radius:999px; background:#fde8e8; color:#9b1c1c; font-weight:500; margin-bottom:.75rem; }
+.update-text { font-size:13px; color:var(--color-text-secondary); line-height:1.65; }
+.update-link { font-size:12px; color:var(--teal); text-decoration:none; margin-top:.5rem; display:inline-block; }
+.update-footer { padding:.75rem 1.25rem; border-top:0.5px solid var(--color-border-tertiary); display:flex; align-items:center; gap:.75rem; }
+.update-footer-note { font-size:11px; color:var(--color-text-tertiary); flex:1; }
+.update-fb-btn { font-size:11px; padding:5px 10px; border-radius:var(--border-radius-md); border:0.5px solid var(--color-border-secondary); background:transparent; color:var(--color-text-secondary); cursor:pointer; font-family:var(--font-sans); }
+
+.svc-grid { display:grid; grid-template-columns:repeat(auto-fill, minmax(175px,1fr)); gap:10px; }
+.svc { background:var(--color-background-primary); border:0.5px solid var(--color-border-tertiary); border-radius:var(--border-radius-lg); padding:1.1rem 1.25rem; cursor:pointer; transition:border-color .15s; }
+.svc:hover { border-color:var(--teal); }
+.svc-name { font-size:13px; font-weight:500; color:var(--color-text-primary); margin-bottom:5px; }
+.svc-desc { font-size:12px; color:var(--color-text-secondary); line-height:1.5; }
+
+.notices { border:0.5px solid var(--color-border-tertiary); border-radius:var(--border-radius-lg); overflow:hidden; }
+.n-row { background:var(--color-background-primary); padding:1rem 1.25rem; border-bottom:0.5px solid var(--color-border-tertiary); }
+.n-row:last-child { border-bottom:none; }
+.n-title { font-size:13px; font-weight:500; color:var(--color-text-primary); margin-bottom:3px; }
+.n-body { font-size:12px; color:var(--color-text-secondary); line-height:1.55; }
+
+.val-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:1.5rem; }
+.val-title { font-size:13px; font-weight:500; color:var(--color-text-primary); margin-bottom:5px; }
+.val-desc { font-size:12px; color:var(--color-text-secondary); line-height:1.6; }
+
+.cta-banner { background:var(--slate); border-radius:var(--border-radius-lg); padding:2rem 2.5rem; margin:2rem 0 0; display:flex; justify-content:space-between; align-items:center; gap:1.5rem; flex-wrap:wrap; }
+.cta-text { color:#fff; }
+.cta-text strong { font-size:17px; font-weight:500; display:block; margin-bottom:6px; }
+.cta-text p { font-size:14px; opacity:.8; line-height:1.6; max-width:460px; }
+.btn-white { font-size:13px; padding:9px 18px; border-radius:var(--border-radius-md); background:#fff; color:var(--slate); border:none; cursor:pointer; font-family:var(--font-sans); font-weight:500; }
+
+.footer { padding:2rem 0 .5rem; border-top:0.5px solid var(--color-border-tertiary); display:flex; justify-content:space-between; align-items:flex-start; gap:2rem; flex-wrap:wrap; }
+.f-brand { font-size:14px; font-weight:500; color:var(--color-text-primary); margin-bottom:4px; }
+.f-tag { font-size:12px; color:var(--color-text-secondary); margin-bottom:1rem; }
+.f-ack { font-size:11px; color:var(--color-text-tertiary); max-width:400px; line-height:1.6; }
+.f-right { display:flex; flex-direction:column; align-items:flex-end; gap:8px; }
+.f-phone { font-size:20px; font-weight:500; color:var(--color-text-primary); }
+.f-detail { font-size:11px; color:var(--color-text-secondary); text-align:right; line-height:1.6; }
+
+@media (max-width:640px) {
+  .nav-links { display:none; }
+  .hero-body { grid-template-columns:1fr; gap:2rem; }
+  .hero h1 { font-size:26px; }
+  .stats { grid-template-columns:1fr 1fr; }
+  .q-grid { grid-template-columns:1fr 1fr; }
+  .gallery { grid-template-rows:150px 150px; }
+  .medicare-inner { grid-template-columns:1fr; }
+  .medicare-img { display:none; }
+  .svc-grid { grid-template-columns:1fr 1fr; }
+  .val-grid { grid-template-columns:1fr; gap:1.25rem; }
+  .footer { flex-direction:column; gap:1.5rem; }
+  .f-right { align-items:flex-start; }
+  .f-detail { text-align:left; }
+  .cta-banner { flex-direction:column; }
+}
+@media (max-width:400px) {
+  .q-grid { grid-template-columns:1fr; }
+  .gallery { grid-template-columns:1fr; grid-template-rows:auto; }
+  .g-cell.tall { grid-row:span 1; height:180px; }
+  .svc-grid { grid-template-columns:1fr; }
+}
+</style>
+</head>
+<body>
+<div class="page">
+
+  <nav class="nav">
+    <div class="nav-brand">
+      <div class="nav-dot">
+        <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="2" fill="#2a9d8f"/><circle cx="12" cy="5" r="1.2" fill="rgba(255,255,255,.7)"/><circle cx="12" cy="19" r="1.2" fill="rgba(255,255,255,.7)"/><circle cx="5" cy="12" r="1.2" fill="rgba(255,255,255,.7)"/><circle cx="19" cy="12" r="1.2" fill="rgba(255,255,255,.7)"/><circle cx="7.1" cy="7.1" r="1.2" fill="rgba(255,255,255,.5)"/><circle cx="16.9" cy="7.1" r="1.2" fill="rgba(255,255,255,.5)"/><circle cx="7.1" cy="16.9" r="1.2" fill="rgba(255,255,255,.5)"/><circle cx="16.9" cy="16.9" r="1.2" fill="rgba(255,255,255,.5)"/></svg>
+      </div>
+      <div>
+        <div class="nav-name">adelaide <span>health</span> care</div>
+        <div class="nav-since">Quality care since 1999</div>
+      </div>
+    </div>
+    <div style="display:flex;align-items:center;gap:1.5rem;flex-wrap:wrap;">
+      <div class="nav-links">
+        <a href="#">About</a><a href="#">Doctors</a><a href="#">Services</a><a href="#">Information</a><a href="#">Contact</a>
+      </div>
+      <a href="https://www.hotdoc.com.au/medical-centres/adelaide-SA-5000/adelaide-health-care1/doctors" class="btn-teal">Book appointment</a>
+    </div>
+  </nav>
+
+  <div class="hero">
+    <div class="eyebrow">Adelaide CBD · Free parking · Welcoming new patients</div>
+    <div class="hero-body">
+      <div>
+        <h1>Expert doctors.<br>Quality care.</h1>
+        <p>Independent GPs providing holistic, patient-centred primary care in the heart of Adelaide since 1999.</p>
+        <div class="hero-ctas">
+          <a href="https://www.hotdoc.com.au/medical-centres/adelaide-SA-5000/adelaide-health-care1/doctors" class="btn-teal">Book appointment</a>
+          <a href="https://www.adelaidehealthcare.com.au/practice-doctors/" class="btn-out">Find a doctor</a>
+        </div>
+      </div>
+      <div class="stats">
+        <div class="stat"><div class="stat-v">25+ years</div><div class="stat-l">of care in Adelaide</div></div>
+        <div class="stat"><div class="stat-v">21</div><div class="stat-l">Independent GPs</div></div>
+        <div class="stat"><div class="stat-v">6 GPs</div><div class="stat-l">Accepting new patients</div></div>
+        <div class="stat"><div class="stat-v">Parking</div><div class="stat-l">Freeat rear</div></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="alert-banner">
+    <div class="alert-content">
+      <div class="alert-pip"></div>
+      <div class="alert-text"><strong>RSV vaccination 2025.</strong> Government-funded RSV vaccine now available for pregnant women. Children under 2 — coming soon. Call reception or ask your doctor.</div>
+    </div>
+    <a href="https://www.adelaidehealthcare.com.au/patient-information/" class="alert-btn">Learn more</a>
+  </div>
+
+  <div class="section">
+    <div class="eyebrow">Quick access</div>
+    <div class="section-title">What do you need?</div>
+    <div class="q-grid">
+      <a href="https://www.hotdoc.com.au/medical-centres/adelaide-SA-5000/adelaide-health-care1/doctors" class="q-card"><div class="q-title">Book an appointment</div><div class="q-desc">New appointments released daily. Book via HotDoc or call 08 8410 0774.</div></a>
+      <a href="https://www.hotdoc.com.au/forms/adelaide-health-care-new-patient-registration-form" class="q-card"><div class="q-title">New patient forms</div><div class="q-desc">Adult and child registration available online or at reception.</div></a>
+      <a href="https://www.adelaidehealthcare.com.au/patient-information/" class="q-card"><div class="q-title">Test results</div><div class="q-desc">Phone results 1–5 pm daily. Some results require a follow-up.</div></a>
+      <a href="https://www.adelaidehealthcare.com.au/patient-information/" class="q-card"><div class="q-title">Telehealth</div><div class="q-desc">Available if seen in-clinic within 12 months. Private billing applies.</div></a>
+      <a href="https://www.adelaidehealthcare.com.au/mymedicare/" class="q-card"><div class="q-title">MyMedicare</div><div class="q-desc">Register us as your preferred GP provider for extra Medicare benefits.</div></a>
+      <a href="https://www.adelaidehealthcare.com.au/fees-forms/" class="q-card"><div class="q-title">Fees and billing</div><div class="q-desc">Private billing. Saturday $5 surcharge. Concession rates available.</div></a>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="eyebrow">Our practice</div>
+    <div class="section-title">Adelaide Health Care</div>
+    <div class="section-sub">City centre location, warm and welcoming care.</div>
+    <div class="gallery">
+      <!-- Replace src values with your actual image paths -->
+      <div class="g-cell tall"><img src="your-team-photo.jpg" alt="Our team img"></div>
+      <div class="g-cell"><img src="your-clinic-photo.jpg" alt="Our Patients img"></div>
+      <div class="g-cell"><img src="your-location-photo.jpg" alt="Our location img"></div>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="eyebrow">Government benefit</div>
+    <div class="section-title">MyMedicare</div>
+    <div class="section-sub">Register Adelaide Health Care as your preferred GP practice and unlock additional Medicare benefits.</div>
+    <div class="medicare-card">
+      <div class="medicare-inner">
+        <div class="medicare-text">
+          <div class="medicare-badge">
+            <div class="badge-my">my</div>
+            <div class="badge-med">medicare</div>
+          </div>
+          <h3>Stronger links between patients and health professionals for better outcomes.</h3>
+          <p>MyMedicare is a free, voluntary government program that enhances healthcare benefits for Medicare Card and DVA Veteran cardholders. By registering Adelaide Health Care as your preferred practice, you unlock supplementary Medicare benefits.</p>
+          <ul class="medicare-steps">
+            <li><div class="step-num">1</div>Log into your Medicare online account via myGov</li>
+            <li><div class="step-num">2</div>Select Adelaide Health Care as your preferred GP practice</li>
+            <li><div class="step-num">3</div>Start accessing additional benefits — it's free and voluntary</li>
+          </ul>
+          <a href="https://www.adelaidehealthcare.com.au/mymedicare/" class="btn-teal">Learn more about MyMedicare</a>
+        </div>
+        <div class="medicare-img">
+          <!-- Replace with your actual consultation photo -->
+          <img src="your-consultation-photo.jpg" alt="Doctor and patient consultation">
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="eyebrow">Latest from the practice</div>
+    <div class="section-title">Facebook update</div>
+    <div class="section-sub">Important notices and announcements.</div>
+    <div class="update-strip">
+      <div class="update-header">
+        <div class="update-label"><div class="update-dot"></div>Latest update</div>
+        <div class="update-source">Via Facebook · April 2025</div>
+      </div>
+      <div class="update-body">
+        <div class="update-tag">Public holiday closure</div>
+        <div class="update-text">Adelaide Health Care will be <strong>closed on Friday 18 April and Monday 21 April</strong> for the Easter public holidays. For afterhours or urgent care options please visit our patient information page.</div>
+        <a class="update-link" href="https://www.adelaidehealthcare.com.au/patient-information/">Patient information and afterhours resources →</a>
+      </div>
+      <div class="update-footer">
+        <div class="update-footer-note">Follow us on Facebook for the latest practice news and updates.</div>
+        <a href="https://www.facebook.com/AdelaideHealthCare" class="update-fb-btn">View on Facebook</a>
+      </div>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="eyebrow">What we offer</div>
+    <div class="section-title">Our services</div>
+    <div class="section-sub">Comprehensive primary care from experienced GPs and allied health professionals.</div>
+    <div class="svc-grid">
+      <a href="https://www.adelaidehealthcare.com.au/services/" class="svc" style="text-decoration:none"><div class="svc-name">General health</div><div class="svc-desc">Holistic GP care for all ages with a patient-first approach.</div></a>
+      <a href="https://www.adelaidehealthcare.com.au/preventative-health-and-chronic-disease-management/" class="svc" style="text-decoration:none"><div class="svc-name">Chronic disease</div><div class="svc-desc">Team-based care with nurses and allied health professionals.</div></a>
+      <a href="https://www.adelaidehealthcare.com.au/womens-health/" class="svc" style="text-decoration:none"><div class="svc-name">Women's health</div><div class="svc-desc">Experienced GPs across all areas of women's health.</div></a>
+      <a href="https://www.adelaidehealthcare.com.au/mens-health/" class="svc" style="text-decoration:none"><div class="svc-name">Men's health</div><div class="svc-desc">Preventative check-ups and ongoing care.</div></a>
+      <a href="https://www.adelaidehealthcare.com.au/breastfeeding-parenting-clinic/" class="svc" style="text-decoration:none"><div class="svc-name">Breastfeeding &amp; parenting</div><div class="svc-desc">Support for breastfeeding, sleep, tongue tie and infant issues.</div></a>
+      <a href="https://www.adelaidehealthcare.com.au/mental-health/" class="svc" style="text-decoration:none"><div class="svc-name">Mental health</div><div class="svc-desc">GP-led mental health care and referral pathways.</div></a>
+      <a href="https://www.adelaidehealthcare.com.au/iv-iron-treatment/" class="svc" style="text-decoration:none"><div class="svc-name">Iron infusions</div><div class="svc-desc">IV iron treatment for iron deficiency and anaemia.</div></a>
+      <a href="https://www.adelaidehealthcare.com.au/intrauterine-device-iud-insertions/" class="svc" style="text-decoration:none"><div class="svc-name">IUD insertions</div><div class="svc-desc">Contraception, menstrual management and HRT support.</div></a>
+      <a href="https://www.adelaidehealthcare.com.au/eating-disorders/" class="svc" style="text-decoration:none"><div class="svc-name">Eating disorders</div><div class="svc-desc">Specialist team. Not currently accepting new patients.</div></a>
+      <a href="https://www.adelaidehealthcare.com.au/pregnancy-postnatal-care/" class="svc" style="text-decoration:none"><div class="svc-name">Pregnancy &amp; postnatal</div><div class="svc-desc">Support through pregnancy and the postnatal period.</div></a>
+      <a href="https://www.adelaidehealthcare.com.au/allied-health-staff/" class="svc" style="text-decoration:none"><div class="svc-name">Allied health</div><div class="svc-desc">Podiatry, physiology, nutrition, pharmacy and pathology on site.</div></a>
+      <a href="https://www.adelaidehealthcare.com.au/services/" class="svc" style="text-decoration:none"><div class="svc-name">Child health</div><div class="svc-desc">Child and breastfeeding-friendly facilities for families.</div></a>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="eyebrow">Good to know</div>
+    <div class="section-title">Practice notices</div>
+    <div class="section-sub">Key policies for patients.</div>
+    <div class="notices">
+      <div class="n-row"><div class="n-title">Two-hour cancellation policy</div><div class="n-body">A fee applies without two hours' notice of cancellation. Payment required before your next appointment.</div></div>
+      <div class="n-row"><div class="n-title">Prescriptions and referrals require an appointment</div><div class="n-body">Please plan ahead to ensure referrals are current and medications last until your next visit.</div></div>
+      <div class="n-row"><div class="n-title">Saturday surcharge</div><div class="n-body">Saturday appointments incur a $5 additional charge. Bulk billing no longer applies on Saturdays. Concession rates available.</div></div>
+      <div class="n-row"><div class="n-title">Telehealth eligibility</div><div class="n-body">Medicare rebates require a face-to-face visit within the past 12 months. Private billing applies to all telehealth consultations.</div></div>
+      <div class="n-row"><div class="n-title">Test results</div><div class="n-body">Phone results 1–5 pm daily. Paper copies at your next in-person appointment. Electronic results can be uploaded to MyHealth Record.</div></div>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="eyebrow">Who we are</div>
+    <div class="section-title">Our approach</div>
+    <div class="val-grid">
+      <div><div class="val-title">Welcoming and inclusive</div><div class="val-desc">Committed to the health of all communities — Aboriginal and Torres Strait Islander peoples, LGBTIQ+ people, refugees and new arrivals.</div></div>
+      <div><div class="val-title">Environmentally responsible</div><div class="val-desc">Solar panels, energy-efficient lighting, soft plastics and bio-waste recycling. Actively reducing our environmental footprint.</div></div>
+      <div><div class="val-title">Local and community-minded</div><div class="val-desc">Waiting room art by local Adelaide artists, rotating every four months and available for purchase. Ask at reception.</div></div>
+    </div>
+  </div>
+
+  <div class="cta-banner">
+    <div class="cta-text">
+      <strong>Ready to book?</strong>
+      <p>Call us on 08 8410 0774 or book online through HotDoc. New appointments released every morning.</p>
+    </div>
+    <a href="https://www.hotdoc.com.au/medical-centres/adelaide-SA-5000/adelaide-health-care1/doctors" class="btn-white">Book appointment</a>
+  </div>
+
+  <div class="footer">
+    <div>
+      <div class="f-brand">Adelaide Health Care</div>
+      <div class="f-tag">Quality healthcare by expert doctors since 1999.</div>
+      <div class="f-ack">We acknowledge the Traditional Owners of country throughout Australia and recognise their continuing connection to land, waters and culture. We pay our respects to their Elders past, present and emerging.</div>
+    </div>
+    <div class="f-right">
+      <div class="f-phone">08 8410 0774</div>
+      <div class="f-detail">City centre · Free parking at rear<br>Priority disabled parking at entrance</div>
+      <a href="https://www.hotdoc.com.au/medical-centres/adelaide-SA-5000/adelaide-health-care1/doctors" class="btn-teal">Book online</a>
+    </div>
+  </div>
+
+</div>
+</body>
+</html>
