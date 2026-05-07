@@ -256,7 +256,19 @@ button.secondary:hover, a.btn.secondary:hover {
     }
   </style>
 </head>
-
+<script>
+  document.querySelectorAll('.stat-number').forEach(el => {
+    const target = parseInt(el.textContent);
+    if (isNaN(target)) return; // skip ∞
+    let current = 0;
+    const step = Math.ceil(target / 30);
+    const timer = setInterval(() => {
+      current = Math.min(current + step, target);
+      el.textContent = current;
+      if (current >= target) clearInterval(timer);
+    }, 40);
+  });
+</script>
 <body>
   <main class="container">
 
